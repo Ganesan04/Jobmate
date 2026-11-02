@@ -6,1163 +6,6 @@
     "version": "v1"
   },
   "paths": {
-    "/api/v1/admin/dashboard": {
-      "get": {
-        "tags": [
-          "Admin"
-        ],
-        "summary": "GET /api/v1/admin/dashboard — the counts the admin home screen shows.",
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminStatsDtoApiResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/verifications": {
-      "get": {
-        "tags": [
-          "Admin"
-        ],
-        "summary": "GET /api/v1/admin/verifications — the review queue.",
-        "description": "Pending requests oldest first, which is the order they should be worked in: each\r\none is somebody waiting for an answer. Add `status=rejected` to revisit\r\ndecisions, or `type=identity` to work one kind of check at a time.\r\n            \r\nThe applicant's phone number is included so a document that looks wrong can be\r\nchecked with the person before it is refused.",
-        "parameters": [
-          {
-            "name": "Status",
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/VerificationRequestStatus"
-            }
-          },
-          {
-            "name": "Type",
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/VerificationType"
-            }
-          },
-          {
-            "name": "Search",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "PageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "Skip",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "Sort",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Take",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminVerificationRequestDtoPagedResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/verifications/{id}/approve": {
-      "post": {
-        "tags": [
-          "Admin"
-        ],
-        "summary": "POST /api/v1/admin/verifications/{id}/approve — accepts the document.",
-        "description": "An empty body approves. Approving updates the applicant's trust badge straight away,\r\nand the badge only turns green once all four consumer checks are approved, so this\r\nis one step towards verified rather than verified itself.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReviewVerificationRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReviewVerificationRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReviewVerificationRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminVerificationRequestDtoApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/verifications/{id}/reject": {
-      "post": {
-        "tags": [
-          "Admin"
-        ],
-        "summary": "POST /api/v1/admin/verifications/{id}/reject — refuses it, with a reason.",
-        "description": "`rejectionReason` is required and is shown to the applicant verbatim, so it has\r\n            to say what to fix — \"photo too dark\", not \"rejected\". The request keeps the reason,\r\n            and the applicant can submit again afterwards.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReviewVerificationRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReviewVerificationRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReviewVerificationRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminVerificationRequestDtoApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/users": {
-      "get": {
-        "tags": [
-          "Admin"
-        ],
-        "summary": "GET /api/v1/admin/users — the users table.",
-        "description": "The activity column means jobs posted for a work giver and applications made for a\r\nworker. Filter with `role`, `isActive` or `verification`; search\r\nmatches name, email and phone number.",
-        "parameters": [
-          {
-            "name": "Role",
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/UserRole"
-            }
-          },
-          {
-            "name": "IsActive",
-            "in": "query",
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "Verification",
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/VerificationStatus"
-            }
-          },
-          {
-            "name": "Search",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "PageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "Skip",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "Sort",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Take",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminUserDtoPagedResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/users/{id}/status": {
-      "post": {
-        "tags": [
-          "Admin"
-        ],
-        "summary": "POST /api/v1/admin/users/{id}/status — suspends or reinstates an account.",
-        "description": "A suspension, not a deletion: the account keeps its jobs, bookings and messages, so\r\nreinstating it puts the person back where they were. The body is required, because\r\nan absent body would otherwise read as \"suspend\".",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetUserStatusRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetUserStatusRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetUserStatusRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminUserDtoApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/jobs": {
-      "get": {
-        "tags": [
-          "Admin"
-        ],
-        "summary": "GET /api/v1/admin/jobs — the jobs table.",
-        "description": "Filter by `status` or `category`; search matches the title and the hiring\r\ncompany. `applicants` is a count, so the table does not have to load every\r\napplication to draw a row.",
-        "parameters": [
-          {
-            "name": "Status",
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/JobStatus"
-            }
-          },
-          {
-            "name": "Category",
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/JobCategory"
-            }
-          },
-          {
-            "name": "Search",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "PageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "Skip",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "Sort",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Take",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminJobDtoPagedResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/jobs/{id}": {
-      "get": {
-        "tags": [
-          "Admin"
-        ],
-        "summary": "GET /api/v1/admin/jobs/{id} — the job detail panel.",
-        "description": "The row plus the two things an admin opens a job to find out: how much of the\r\napplicant pipeline converted into bookings, and how much was actually paid.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminJobDetailDtoApiResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/auth/login": {
-      "post": {
-        "tags": [
-          "AdminAuth"
-        ],
-        "summary": "POST /api/v1/admin/auth/login — email and password, admin role only.",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminLoginRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminLoginRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminLoginRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthResultDtoApiResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/disputes": {
-      "get": {
-        "tags": [
-          "AdminTrust"
-        ],
-        "summary": "GET /api/v1/admin/disputes — the dispute queue, open cases first.",
-        "description": "Defaults to the cases that are still live, oldest first, because those are the ones\r\nsomebody is waiting on. Pass `status=resolved` or `status=rejected` to\r\nlook at closed work, and `search` to match the description or the notes.",
-        "parameters": [
-          {
-            "name": "Status",
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/DisputeStatus"
-            }
-          },
-          {
-            "name": "Search",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "PageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "Skip",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "Sort",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Take",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DisputeDtoPagedResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/disputes/{id}/review": {
-      "post": {
-        "tags": [
-          "AdminTrust"
-        ],
-        "summary": "POST /api/v1/admin/disputes/{id}/review — marks a dispute as being looked at.",
-        "description": "A separate step from resolving so the queue shows what has been picked up, and so a\r\nsecond admin does not start duplicating work that is already in progress.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DisputeDtoApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/disputes/{id}/resolve": {
-      "post": {
-        "tags": [
-          "AdminTrust"
-        ],
-        "summary": "POST /api/v1/admin/disputes/{id}/resolve — closes a dispute.",
-        "description": "Send `status=resolved` when the complaint was justified and\r\n`status=rejected` when it was not; both need `resolution` saying why,\r\nwhich is what both parties are shown. Closing a dispute releases any money it was\r\nholding back to the worker. If the outcome goes against the worker, refund the\r\npayment separately afterwards.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResolveDisputeRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResolveDisputeRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResolveDisputeRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DisputeDtoApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/support-reports": {
-      "get": {
-        "tags": [
-          "AdminTrust"
-        ],
-        "summary": "GET /api/v1/admin/support-reports — the support report queue.",
-        "description": "Newest first, showing handled reports too. Add `isResolved=false` for just the\r\noutstanding ones.",
-        "parameters": [
-          {
-            "name": "IsResolved",
-            "in": "query",
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "Page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "PageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "Skip",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "Sort",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Take",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SupportReportAdminDtoPagedResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/support-reports/{id}/resolve": {
-      "post": {
-        "tags": [
-          "AdminTrust"
-        ],
-        "summary": "POST /api/v1/admin/support-reports/{id}/resolve — marks a report dealt with.",
-        "description": "Send `isResolved=false` to put it back, for a report that turned out to need\r\nmore work rather than one that was filed in error.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "isResolved",
-            "in": "query",
-            "schema": {
-              "type": "boolean"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SupportReportAdminDtoApiResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/applications/{id}/withdraw": {
       "post": {
         "tags": [
@@ -1686,7 +529,7 @@
           "Auth"
         ],
         "summary": "POST /api/v1/auth/register — creates an unverified account and sends the OTP.",
-        "description": "The Flutter flow is register → /otp → role selection → profile setup, so this\r\nendpoint returns `requiresOtpVerification: true` and a token pair that\r\nthe app stores while the code is entered.",
+        "description": "No role is chosen: the account gets both a worker and a work giver profile and\r\nstarts in worker mode. Returns `requiresOtpVerification: true` and a token\r\npair that the app stores while the code is entered.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1761,6 +604,66 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/VerifyOtpRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResultDtoApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/switch-role": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "POST /api/v1/auth/switch-role — moves the caller into worker or work giver mode.",
+        "description": "Every account can both work and hire. The body is `{ \"role\": \"worker\" }` or\r\n`{ \"role\": \"workGiver\" }`. Returns a new token pair whose role claim is the new\r\nmode; the app must replace its stored tokens, because the old access token still\r\ncarries the old mode. Switching to the current mode just returns fresh tokens.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwitchRoleRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwitchRoleRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwitchRoleRequest"
               }
             }
           }
@@ -2311,225 +1214,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Int32ApiResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/disputes": {
-      "post": {
-        "tags": [
-          "Dispute"
-        ],
-        "summary": "POST /api/v1/disputes — raises a dispute about a booking.",
-        "description": "Only the two participants can raise one, and the other party is worked out from the\r\nbooking, so a complaint cannot be aimed at somebody uninvolved. The other side is\r\nnotified immediately.\r\n            \r\nSend `amount` only when the dispute is about pay. Naming an amount holds the\r\nbooking's settled payment while the dispute is open; a dispute about the workplace\r\nitself should leave `amount` at zero and hold nobody's money. One open dispute\r\nper person per job.",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateDisputeRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateDisputeRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateDisputeRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DisputeDtoApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "Dispute"
-        ],
-        "summary": "GET /api/v1/disputes — disputes the caller raised or was named in.",
-        "description": "Newest first, and both sides: a worker who has been complained about needs to see\r\nthe case and answer it. Pass `status=open` for a tab of what is still live.",
-        "parameters": [
-          {
-            "name": "Status",
-            "in": "query",
-            "schema": {
-              "$ref": "#/components/schemas/DisputeStatus"
-            }
-          },
-          {
-            "name": "Page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "PageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "Skip",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "Sort",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Take",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DisputeDtoPagedResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/disputes/{id}": {
-      "get": {
-        "tags": [
-          "Dispute"
-        ],
-        "summary": "GET /api/v1/disputes/{id} — one dispute, for a participant.",
-        "description": "Includes the admin's resolution notes once it has been closed. Somebody who is not a\r\nparty to it is told the dispute does not exist rather than that it is off limits.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DisputeDtoApiResponse"
                 }
               }
             }
@@ -4742,7 +3426,7 @@
           "Payment"
         ],
         "summary": "GET /api/v1/payments — the caller's own payments, newest first.",
-        "description": "Scoped by role: a giver sees what they paid out, a worker what they received, an\r\nadministrator everything. Optional filters: `statuses`, `jobId`,\r\n`workerId`, `from`, `to`.",
+        "description": "Scoped by the active role: in giver mode the caller sees what they paid out, in\r\nworker mode what they received. Optional filters: `statuses`, `jobId`,\r\n`workerId`, `from`, `to`.",
         "parameters": [
           {
             "name": "Statuses",
@@ -4893,97 +3577,6 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/ConfirmPaymentRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaymentReceiptDtoApiResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/payments/{id}/refund": {
-      "post": {
-        "tags": [
-          "Payment"
-        ],
-        "summary": "POST /api/v1/payments/{id}/refund — reverses a settled payment. Administrator only.",
-        "description": "Deliberately not available to the giver or the worker: reversing a charge moves\r\nmoney back out of the platform, so only an administrator can do it and the\r\nreason is recorded on the payment.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefundPaymentRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefundPaymentRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefundPaymentRequest"
               }
             }
           }
@@ -5470,7 +4063,7 @@
           "Profile"
         ],
         "summary": "POST /api/v1/profile/documents — uploads an identity or skill document.",
-        "description": "Multipart: a `file` part and a `type` field of identity, phone, email,\r\nskills or address. The document is stored and listed as pending; send its\r\n`url` to `POST /verifications` to have it reviewed. Documents are private\r\nto the worker who uploaded them and to an admin.",
+        "description": "Multipart: a `file` part and a `type` field of identity, phone, email,\r\nskills or address. Send its `url` to `POST /verifications` to verify it.\r\nAvailable in either mode, because verification belongs to the person. Documents\r\nare private to whoever uploaded them.",
         "requestBody": {
           "content": {
             "multipart/form-data": {
@@ -5934,7 +4527,7 @@
           "SupportReport"
         ],
         "summary": "POST /api/v1/support-reports — files a report for the team to look at.",
-        "description": "Describe the problem in a sentence or two. `relatedJobId` is optional; include\r\nit when the report is about one particular booking so the admin can open it.",
+        "description": "Describe the problem in a sentence or two. `relatedJobId` is optional; include\r\nit when the report is about one particular booking.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -6080,8 +4673,8 @@
         "tags": [
           "Verification"
         ],
-        "summary": "POST /api/v1/verifications — asks for one kind of check to be reviewed.",
-        "description": "Send the `documentUrl` returned by `POST /profile/documents` to attach the\r\nuploaded file. One live request per type: asking again while one is pending is a\r\n409, because two open requests for the same check leave an admin with no way to tell\r\nwhich document is current.\r\n            \r\nPhone and email checks are refused up front if the account has no number or address\r\nto check — a request an admin could only ever reject is not worth sending.",
+        "summary": "POST /api/v1/verifications — submits one kind of check; it is approved immediately.",
+        "description": "Send the `documentUrl` returned by `POST /profile/documents` to attach the\r\nuploaded file. The response is the approved request, and the user's badge is\r\nrecomputed. A type that still has a pending request from before auto-approval is a\r\n409 until that request is withdrawn.\r\n            \r\nPhone and email checks are refused up front if the account has no number or address\r\nto check.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -6202,7 +4795,7 @@
           "Verification"
         ],
         "summary": "POST /api/v1/verifications/{id}/withdraw — takes a pending request back.",
-        "description": "Not a delete: the attempt stays in the history, recorded as withdrawn, so it is\r\nclear the applicant chose to stop rather than being refused. Only a pending request\r\ncan be withdrawn.",
+        "description": "Not a delete: the attempt stays in the history, recorded as withdrawn, so it is\r\nclear the applicant chose to stop rather than being refused. Only a pending request\r\ncan be withdrawn; new requests are approved on submission, so an approved one is a 400.",
         "parameters": [
           {
             "name": "id",
@@ -6440,7 +5033,7 @@
         "tags": [
           "WorkerEarnings"
         ],
-        "summary": "GET /api/v1/worker/wallet — earned, pending and disputed totals.",
+        "summary": "GET /api/v1/worker/wallet — earned and pending totals.",
         "responses": {
           "401": {
             "description": "Unauthorized",
@@ -7015,451 +5608,6 @@
   },
   "components": {
     "schemas": {
-      "AdminJobDetailDto": {
-        "type": "object",
-        "properties": {
-          "job": {
-            "$ref": "#/components/schemas/AdminJobDto"
-          },
-          "totalApplications": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "shortlistedCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "selectedCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "paidCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "totalPaid": {
-            "type": "number",
-            "format": "double"
-          },
-          "openDisputes": {
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "additionalProperties": false
-      },
-      "AdminJobDetailDtoApiResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "errorCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/AdminJobDetailDto"
-          }
-        },
-        "additionalProperties": false
-      },
-      "AdminJobDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "title": {
-            "type": "string",
-            "nullable": true
-          },
-          "company": {
-            "type": "string",
-            "nullable": true
-          },
-          "giverId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "giverName": {
-            "type": "string",
-            "nullable": true
-          },
-          "category": {
-            "$ref": "#/components/schemas/JobCategory"
-          },
-          "status": {
-            "$ref": "#/components/schemas/JobStatus"
-          },
-          "pay": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "payType": {
-            "$ref": "#/components/schemas/PayType"
-          },
-          "workersNeeded": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "workersFilled": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "applicants": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "area": {
-            "type": "string",
-            "nullable": true
-          },
-          "jobDate": {
-            "type": "string",
-            "format": "date"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "additionalProperties": false
-      },
-      "AdminJobDtoPagedResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "errorCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AdminJobDto"
-            },
-            "nullable": true,
-            "readOnly": true
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/PaginationMeta"
-          }
-        },
-        "additionalProperties": false
-      },
-      "AdminLoginRequest": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "nullable": true
-          },
-          "password": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "AdminStatsDto": {
-        "type": "object",
-        "properties": {
-          "totalUsers": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "workers": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "workGivers": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "activeJobs": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "applications": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "completedJobs": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "payments": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "verificationRequests": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "openDisputes": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "totalJobs": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "openDisputesUnderReview": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "newUsersThisWeek": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "totalPayoutThisMonth": {
-            "type": "number",
-            "format": "double"
-          }
-        },
-        "additionalProperties": false
-      },
-      "AdminStatsDtoApiResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "errorCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/AdminStatsDto"
-          }
-        },
-        "additionalProperties": false
-      },
-      "AdminUserDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "name": {
-            "type": "string",
-            "nullable": true
-          },
-          "phone": {
-            "type": "string",
-            "nullable": true
-          },
-          "email": {
-            "type": "string",
-            "nullable": true
-          },
-          "role": {
-            "$ref": "#/components/schemas/UserRole"
-          },
-          "verification": {
-            "$ref": "#/components/schemas/VerificationStatus"
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "joinedOn": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "jobsCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "area": {
-            "type": "string",
-            "nullable": true
-          },
-          "rating": {
-            "type": "number",
-            "format": "double"
-          },
-          "phoneLast4": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "lastLoginAt": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "AdminUserDtoApiResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "errorCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/AdminUserDto"
-          }
-        },
-        "additionalProperties": false
-      },
-      "AdminUserDtoPagedResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "errorCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AdminUserDto"
-            },
-            "nullable": true,
-            "readOnly": true
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/PaginationMeta"
-          }
-        },
-        "additionalProperties": false
-      },
-      "AdminVerificationRequestDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "userId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "userName": {
-            "type": "string",
-            "nullable": true
-          },
-          "userRole": {
-            "$ref": "#/components/schemas/UserRole"
-          },
-          "type": {
-            "$ref": "#/components/schemas/VerificationType"
-          },
-          "submittedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "status": {
-            "$ref": "#/components/schemas/VerificationStatus"
-          },
-          "document": {
-            "type": "string",
-            "nullable": true
-          },
-          "note": {
-            "type": "string",
-            "nullable": true
-          },
-          "rejectionReason": {
-            "type": "string",
-            "nullable": true
-          },
-          "reviewedAt": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "reviewedBy": {
-            "type": "string",
-            "nullable": true
-          },
-          "userPhone": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "AdminVerificationRequestDtoApiResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "errorCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/AdminVerificationRequestDto"
-          }
-        },
-        "additionalProperties": false
-      },
-      "AdminVerificationRequestDtoPagedResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "errorCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AdminVerificationRequestDto"
-            },
-            "nullable": true,
-            "readOnly": true
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/PaginationMeta"
-          }
-        },
-        "additionalProperties": false
-      },
       "ApiError": {
         "type": "object",
         "properties": {
@@ -7820,27 +5968,6 @@
         },
         "additionalProperties": false
       },
-      "CreateDisputeRequest": {
-        "type": "object",
-        "properties": {
-          "jobId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "reason": {
-            "$ref": "#/components/schemas/ReportReason"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "amount": {
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "additionalProperties": false
-      },
       "CreateJobRequest": {
         "type": "object",
         "properties": {
@@ -8112,132 +6239,6 @@
           "android",
           "ios",
           "web"
-        ],
-        "type": "string"
-      },
-      "DisputeDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "reason": {
-            "$ref": "#/components/schemas/ReportReason"
-          },
-          "raisedBy": {
-            "type": "string",
-            "nullable": true
-          },
-          "raisedByUserId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "againstUser": {
-            "type": "string",
-            "nullable": true
-          },
-          "againstUserId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "jobTitle": {
-            "type": "string",
-            "nullable": true
-          },
-          "company": {
-            "type": "string",
-            "nullable": true
-          },
-          "jobId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "raisedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "status": {
-            "$ref": "#/components/schemas/DisputeStatus"
-          },
-          "amount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "details": {
-            "type": "string",
-            "nullable": true
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
-          },
-          "resolvedBy": {
-            "type": "string",
-            "nullable": true
-          },
-          "resolvedAt": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "DisputeDtoApiResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "errorCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/DisputeDto"
-          }
-        },
-        "additionalProperties": false
-      },
-      "DisputeDtoPagedResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "errorCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DisputeDto"
-            },
-            "nullable": true,
-            "readOnly": true
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/PaginationMeta"
-          }
-        },
-        "additionalProperties": false
-      },
-      "DisputeStatus": {
-        "enum": [
-          "open",
-          "underReview",
-          "resolved",
-          "rejected"
         ],
         "type": "string"
       },
@@ -9413,7 +7414,6 @@
           "assignment",
           "payment",
           "conversation",
-          "dispute",
           "verification",
           "none"
         ],
@@ -9680,7 +7680,6 @@
           "pending",
           "processing",
           "paid",
-          "disputed",
           "failed",
           "refunded",
           "cancelled"
@@ -9805,16 +7804,6 @@
         },
         "additionalProperties": false
       },
-      "RefundPaymentRequest": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "RegisterDeviceRequest": {
         "type": "object",
         "properties": {
@@ -9854,9 +7843,6 @@
           "password": {
             "type": "string",
             "nullable": true
-          },
-          "role": {
-            "$ref": "#/components/schemas/UserRole"
           },
           "area": {
             "type": "string",
@@ -9941,19 +7927,6 @@
         },
         "additionalProperties": false
       },
-      "ResolveDisputeRequest": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "$ref": "#/components/schemas/DisputeStatus"
-          },
-          "resolution": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "ReviewApplicationRequest": {
         "type": "object",
         "properties": {
@@ -9964,20 +7937,6 @@
           "proposedPay": {
             "type": "integer",
             "format": "int32",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "ReviewVerificationRequest": {
-        "type": "object",
-        "properties": {
-          "note": {
-            "type": "string",
-            "nullable": true
-          },
-          "rejectionReason": {
-            "type": "string",
             "nullable": true
           }
         },
@@ -10165,19 +8124,6 @@
         },
         "additionalProperties": false
       },
-      "SetUserStatusRequest": {
-        "type": "object",
-        "properties": {
-          "isActive": {
-            "type": "boolean"
-          },
-          "reason": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "StartConversationRequest": {
         "type": "object",
         "properties": {
@@ -10243,95 +8189,6 @@
         },
         "additionalProperties": false
       },
-      "SupportReportAdminDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "reason": {
-            "$ref": "#/components/schemas/ReportReason"
-          },
-          "details": {
-            "type": "string",
-            "nullable": true
-          },
-          "submittedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "reportedBy": {
-            "type": "string",
-            "nullable": true
-          },
-          "reportedByUserId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "relatedJobId": {
-            "type": "string",
-            "nullable": true
-          },
-          "isResolved": {
-            "type": "boolean"
-          },
-          "resolvedAt": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "SupportReportAdminDtoApiResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "errorCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/SupportReportAdminDto"
-          }
-        },
-        "additionalProperties": false
-      },
-      "SupportReportAdminDtoPagedResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "errorCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SupportReportAdminDto"
-            },
-            "nullable": true,
-            "readOnly": true
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/PaginationMeta"
-          }
-        },
-        "additionalProperties": false
-      },
       "SupportReportDto": {
         "type": "object",
         "properties": {
@@ -10376,6 +8233,15 @@
           },
           "data": {
             "$ref": "#/components/schemas/SupportReportDto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SwitchRoleRequest": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
           }
         },
         "additionalProperties": false
@@ -10771,8 +8637,7 @@
       "UserRole": {
         "enum": [
           "worker",
-          "workGiver",
-          "admin"
+          "workGiver"
         ],
         "type": "string"
       },
@@ -10926,9 +8791,6 @@
           "code": {
             "type": "string",
             "nullable": true
-          },
-          "role": {
-            "$ref": "#/components/schemas/UserRole"
           }
         },
         "additionalProperties": false
@@ -10941,10 +8803,6 @@
             "format": "int32"
           },
           "pendingAmount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "disputedAmount": {
             "type": "integer",
             "format": "int32"
           },
@@ -11448,10 +9306,6 @@
           "pendingAmount": {
             "type": "integer",
             "format": "int32"
-          },
-          "disputedAmount": {
-            "type": "integer",
-            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -11501,32 +9355,12 @@
   ],
   "tags": [
     {
-      "name": "AdminAuth",
-      "description": "The admin console's sign-in. Separate from Jobmate.Api.Controllers.AuthController because\r\nthe admin surface is email-only and a non-admin account must never be able to\r\nauthenticate here even with a correct password."
-    },
-    {
-      "name": "Admin",
-      "description": "The admin back office: the dashboard, the verification review queue, and the user and\r\njob tables.\r\n            \r\nThe `Admin` role is required on the whole controller, so every endpoint here is\r\nunreachable to a worker or a work giver, and each read goes through a MediatR query\r\nrather than a direct database call.\r\n            \r\nThese are the only endpoints that return phone numbers, email addresses and exact\r\nareas for other people. That is deliberate and confined to this controller: an admin\r\nhas to be able to identify and contact the person in front of them, and the privacy\r\nrules for the marketplace itself are enforced by the user-facing projections rather\r\nthan by hiding fields from this one screen."
-    },
-    {
       "name": "Application",
       "description": "Actions on a single application: the worker's withdraw and the giver's shortlist or\r\nreject. Applying lives on the job route (POST /jobs/{id}/apply) and the two lists\r\nlive there too, so this controller only holds the actions keyed by application id."
     },
     {
       "name": "Auth",
       "description": "Authentication: registration with phone OTP, sign-in, token rotation and\r\npassword recovery. These are the only endpoints that do not require a bearer\r\ntoken."
-    },
-    {
-      "name": "Dispute",
-      "description": "Raising and tracking a dispute about a booking."
-    },
-    {
-      "name": "SupportReport",
-      "description": "Reporting a problem. Separate from Jobmate.Api.Controllers.DisputeController because a report\r\nneeds no booking: a fake job listing somebody only ever saw has no other party to\r\nargue with, and refusing to let anybody report those would lose exactly the abuse\r\ncases that matter most."
-    },
-    {
-      "name": "AdminTrust",
-      "description": "The admin side of disputes and support reports. Lives on the admin route so the whole\r\ncontroller inherits the Admin role requirement."
     },
     {
       "name": "Job",
@@ -11554,7 +9388,7 @@
     },
     {
       "name": "Payment",
-      "description": "Money: releasing pay for a booking, listing the caller's payments, and the\r\nadministrator's refund.\r\n            \r\nCreating a payment hangs off the job route, because the app releases pay from a\r\njob and names the worker: POST /jobs/{jobId}/payments/{workerId}. The remaining\r\nactions are keyed by payment id and live here."
+      "description": "Money: releasing pay for a booking and listing the caller's payments.\r\n            \r\nCreating a payment hangs off the job route, because the app releases pay from a\r\njob and names the worker: POST /jobs/{jobId}/payments/{workerId}. The remaining\r\nactions are keyed by payment id and live here."
     },
     {
       "name": "WorkerEarnings",
@@ -11570,7 +9404,7 @@
     },
     {
       "name": "Media",
-      "description": "Serves uploaded files back.\r\n            \r\nSplit into two routes because the two families have different audiences: a profile\r\nphoto is shown to anyone signed in, while an identity document is readable only by the\r\nworker who uploaded it and by an admin. One route for both would mean either\r\npublishing everyone's passports or hiding every avatar."
+      "description": "Serves uploaded files back.\r\n            \r\nSplit into two routes because the two families have different audiences: a profile\r\nphoto is shown to anyone signed in, while an identity document is readable only by the\r\nperson who uploaded it. One route for both would mean either\r\npublishing everyone's passports or hiding every avatar."
     },
     {
       "name": "Assignment",
@@ -11593,8 +9427,12 @@
       "description": "A worker's bookmarked jobs.\r\n            \r\nThe bookmark list is per user and per job, and both adding and removing are idempotent:\r\na double tap on the save icon is not an error, and neither is unsaving something that\r\nis not saved."
     },
     {
+      "name": "SupportReport",
+      "description": "Reporting a problem. A report needs no booking: a fake job listing somebody only ever\r\nsaw has no other party to argue with, and refusing to let anybody report those would\r\nlose exactly the abuse cases that matter most."
+    },
+    {
       "name": "Verification",
-      "description": "The trust badge, and the requests behind it.\r\n            \r\nReads and withdrawals are the user's own; the decision itself is an admin action on\r\n`/admin/verifications`. Splitting them is what stops a user approving themselves."
+      "description": "The trust badge, and the requests behind it. The badge belongs to the person, so it\r\nis the same in worker and work giver mode."
     }
   ]
 }
