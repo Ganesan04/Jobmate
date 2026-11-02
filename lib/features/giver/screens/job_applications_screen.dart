@@ -35,6 +35,16 @@ class _JobApplicationsScreenState extends State<JobApplicationsScreen> {
   ApplicantStatus? _filter;
 
   @override
+  void initState() {
+    super.initState();
+    // Applicants arrive while the giver is signed in, so the list is fetched
+    // fresh on every visit instead of trusting the sign-in snapshot.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => context.read<GiverProvider>().refreshApplicants(widget.jobId),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final TextTheme texts = Theme.of(context).textTheme;
     final GiverProvider giver = context.watch<GiverProvider>();
@@ -113,52 +123,63 @@ class _JobApplicationsScreenState extends State<JobApplicationsScreen> {
               ),
             ),
             Expanded(
-              child: items.isEmpty
-                  ? EmptyStateView(
-                      title: all.isEmpty ? 'No applicants yet' : 'Nothing here',
-                      message: all.isEmpty
-                          ? 'Workers who apply to this job will appear here.'
-                          : 'No applicants match this filter.',
-                      icon: Icons.people_outline_rounded,
-                      compact: true,
-                    )
-                  : ListView(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.screen,
-                        AppSpacing.xs,
-                        AppSpacing.screen,
-                        AppSpacing.xl,
-                      ),
-                      children: <Widget>[
-                        SectionHeader(title: '${items.length} applicant(s)'),
-                        for (final JobApplicant applicant in items)
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: AppSpacing.sm,
-                            ),
-                            child: ApplicantCard(
-                              applicant: applicant,
-                              job: job ?? _placeholderJob,
-                              onShortlist: () => giver.updateApplicant(
-                                applicant.id,
-                                ApplicantStatus.shortlisted,
-                              ),
-                              onReject: () => giver.updateApplicant(
-                                applicant.id,
-                                ApplicantStatus.rejected,
-                              ),
-                              onSelect: () => AppRouter.push(
-                                context,
-                                AppRoutes.selectWorker,
-                                arguments: <String, dynamic>{
-                                  'jobId': widget.jobId,
-                                  'applicantId': applicant.id,
-                                },
-                              ),
-                            ),
+              child: RefreshIndicator(
+                onRefresh: () => giver.refreshApplicants(widget.jobId),
+                child: items.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: <Widget>[
+                          EmptyStateView(
+                            title: all.isEmpty
+                                ? 'No applicants yet'
+                                : 'Nothing here',
+                            message: all.isEmpty
+                                ? 'Workers who apply to this job will appear here.'
+                                : 'No applicants match this filter.',
+                            icon: Icons.people_outline_rounded,
+                            compact: true,
                           ),
-                      ],
-                    ),
+                        ],
+                      )
+                    : ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.screen,
+                          AppSpacing.xs,
+                          AppSpacing.screen,
+                          AppSpacing.xl,
+                        ),
+                        children: <Widget>[
+                          SectionHeader(title: '${items.length} applicant(s)'),
+                          for (final JobApplicant applicant in items)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: AppSpacing.sm,
+                              ),
+                              child: ApplicantCard(
+                                applicant: applicant,
+                                job: job ?? _placeholderJob,
+                                onShortlist: () => giver.updateApplicant(
+                                  applicant.id,
+                                  ApplicantStatus.shortlisted,
+                                ),
+                                onReject: () => giver.updateApplicant(
+                                  applicant.id,
+                                  ApplicantStatus.rejected,
+                                ),
+                                onSelect: () => AppRouter.push(
+                                  context,
+                                  AppRoutes.selectWorker,
+                                  arguments: <String, dynamic>{
+                                    'jobId': widget.jobId,
+                                    'applicantId': applicant.id,
+                                  },
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+              ),
             ),
           ],
         ),
