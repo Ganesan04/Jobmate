@@ -11,7 +11,6 @@ abstract final class AppRoutes {
   static const String login = '/login';
   static const String register = '/register';
   static const String otp = '/otp';
-  static const String roleSelection = '/role-selection';
   static const String profileSetup = '/profile-setup';
   static const String shell = '/shell';
 

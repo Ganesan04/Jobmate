@@ -88,23 +88,6 @@ void main() {
     expect(find.byType(GiverHomeScreen), findsNothing);
   });
 
-  testWidgets('the Try it as card switches the role before sign in', (
-    WidgetTester tester,
-  ) async {
-    final AuthProvider auth = await pumpToLogin(tester);
-
-    final Finder giverChip = find.text('Work Giver');
-    await tester.ensureVisible(giverChip);
-    await tester.pumpAndSettle();
-    await tester.tap(giverChip);
-    await tester.pumpAndSettle();
-    expect(auth.role, UserRole.workGiver, reason: 'card choice is remembered');
-
-    await submitLogin(tester);
-    expect(auth.role, UserRole.workGiver);
-    expect(find.byType(GiverHomeScreen), findsOneWidget);
-  });
-
   test('a wrong password is still rejected for the giver account', () async {
     final AuthProvider auth = AuthProvider(
       repository: buildFakeRepositories().users,
@@ -115,5 +98,26 @@ void main() {
     );
     expect(ok, isFalse);
     expect(auth.isAuthenticated, isFalse);
+  });
+
+  test('a new account keeps the role chosen at registration', () async {
+    final AuthProvider auth = AuthProvider(
+      repository: buildFakeRepositories().users,
+    );
+    final bool registered = await auth.register(
+      name: 'New Giver',
+      phone: '9800000000',
+      email: 'new.giver@shop.in',
+      password: 'jobmate123',
+      role: UserRole.workGiver,
+    );
+    expect(registered, isTrue);
+
+    final bool verified = await auth.verifyOtp('123456');
+    expect(verified, isTrue);
+    // The role is the one fixed at registration, not a default, and the entry
+    // flow goes straight to profile setup instead of asking for a role again.
+    expect(auth.role, UserRole.workGiver);
+    expect(auth.stage, AppStage.profileSetup);
   });
 }

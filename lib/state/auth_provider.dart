@@ -9,7 +9,7 @@ import '../services/api/token_store.dart';
 import '../services/repositories/user_repository.dart';
 
 /// Top level app stage — drives which entry flow is shown.
-enum AppStage { splash, onboarding, auth, onboardingRole, profileSetup, ready }
+enum AppStage { splash, onboarding, auth, profileSetup, ready }
 
 /// Owns the session: onboarding, credentials, OTP, role and profile setup.
 class AuthProvider extends ChangeNotifier {
@@ -174,11 +174,11 @@ class AuthProvider extends ChangeNotifier {
         identifier: identifier,
         password: password,
       );
-      // An explicit "Try it as" pick wins; otherwise the account keeps the role
-      // it was seeded with, so the giver login lands on the giver home.
-      _user = _pendingRole == null
-          ? signedIn
-          : signedIn.copyWith(role: _pendingRole);
+      // The account's role is decided by the backend and fixed at registration.
+      // The app must mirror it rather than overlay a locally chosen role, or the
+      // UI would show a role the account does not actually have.
+      _user = signedIn;
+      _pendingRole = signedIn.role;
       _stage = AppStage.ready;
       return true;
     });
@@ -189,8 +189,12 @@ class AuthProvider extends ChangeNotifier {
     required String phone,
     required String email,
     required String password,
+    required UserRole role,
   }) async {
     _pendingPhone = phone;
+    // The role is chosen once, at sign-up, and fixed on the account by the
+    // backend, so it is remembered here and echoed again at OTP verification.
+    _pendingRole = role;
     notifyListeners();
     return _guard(() async {
       await _repository.register(
@@ -198,11 +202,11 @@ class AuthProvider extends ChangeNotifier {
         phone: phone,
         email: email,
         password: password,
-        role: _pendingRole ?? UserRole.worker,
+        role: role,
         area: _pendingArea,
       );
       // Stage stays `auth` until the OTP is verified so the OTP route can be
-      // pushed on top of the current one; [verifyOtp] then moves to the role step.
+      // pushed on top of the current one; [verifyOtp] then moves to profile setup.
       return true;
     });
   }
@@ -214,7 +218,9 @@ class AuthProvider extends ChangeNotifier {
         otp: otp,
         role: _pendingRole ?? _user?.role ?? UserRole.worker,
       );
-      _stage = AppStage.onboardingRole;
+      // The role was fixed at registration, so a brand new account goes straight
+      // to filling in its profile rather than picking a role again.
+      _stage = AppStage.profileSetup;
       return true;
     });
   }
@@ -264,26 +270,7 @@ class AuthProvider extends ChangeNotifier {
     });
   }
 
-  // ------------------------------------------------------- role + profile set
-
-  /// Picks the role to sign in as. Works before sign-in (remembered and applied
-  /// by [signIn]) and after (switches the live session).
-  void selectRole(UserRole role) {
-    _pendingRole = role;
-    if (_user != null) {
-      _user = _user!.copyWith(role: role);
-    }
-    notifyListeners();
-  }
-
-  void continueFromRole() {
-    if (_user == null) return;
-    // A brand new account arrives from registration with almost no profile, so
-    // it is sent through the profile form once before reaching the app.
-    final bool needsProfile = _user!.name.trim().isEmpty || _user!.phone.isEmpty;
-    _stage = needsProfile ? AppStage.profileSetup : AppStage.ready;
-    notifyListeners();
-  }
+  // ----------------------------------------------------------- profile set
 
   Future<bool> saveProfile({
     required String name,

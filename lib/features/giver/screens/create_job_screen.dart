@@ -17,6 +17,7 @@ import '../../../core/widgets/status_chip.dart';
 import '../../../models/enums.dart';
 import '../../../models/job.dart';
 import '../../../models/job_draft.dart';
+import '../../../services/api/api_exception.dart';
 import '../../../state/giver_provider.dart';
 
 /// Six-step "Post a job" wizard: basics, requirements, schedule, payment,
@@ -210,22 +211,32 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     _collect();
     setState(() => _busy = true);
     final GiverProvider giver = context.read<GiverProvider>();
-    final Job job = await giver.publishDraft(
-      _draft,
-      publishImmediately: true,
-    );
-    if (!mounted) return;
-    setState(() => _busy = false);
-    await showSuccessDialog(
-      context,
-      title: 'Job published',
-      message: '"${job.title}" is now visible to workers near ${job.area}.',
-      primaryLabel: 'View my jobs',
-      onPrimary: () {
-        Navigator.of(context).pop();
-        Navigator.of(context).pop();
-      },
-    );
+    try {
+      final Job job = await giver.publishDraft(
+        _draft,
+        publishImmediately: true,
+      );
+      if (!mounted) return;
+      setState(() => _busy = false);
+      await showSuccessDialog(
+        context,
+        title: 'Job published',
+        message: '"${job.title}" is now visible to workers near ${job.area}.',
+        primaryLabel: 'View my jobs',
+        onPrimary: () {
+          Navigator.of(context).pop();
+          Navigator.of(context).pop();
+        },
+      );
+    } on ApiException catch (failure) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      _toast(failure.message);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      _toast('Could not publish the job. Please try again.');
+    }
   }
 
   @override

@@ -15,7 +15,6 @@ void main() {
         AppRoutes.login,
         AppRoutes.register,
         AppRoutes.otp,
-        AppRoutes.roleSelection,
         AppRoutes.profileSetup,
         AppRoutes.shell,
         AppRoutes.workerHome,

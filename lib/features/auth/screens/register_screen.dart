@@ -10,6 +10,7 @@ import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/app_dialogs.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/app_top_bar.dart';
+import '../../../models/enums.dart';
 import '../../../navigation/app_router.dart';
 import '../../../state/auth_provider.dart';
 
@@ -24,6 +25,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  UserRole _role = UserRole.worker;
   final TextEditingController _name = TextEditingController();
   final TextEditingController _phone = TextEditingController();
   final TextEditingController _email = TextEditingController();
@@ -55,6 +57,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       phone: _phone.text.trim(),
       email: _email.text.trim(),
       password: _password.text,
+      role: _role,
     );
     if (!ok) return;
     navigator.pushReplacementNamed(
@@ -83,8 +86,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Text('Let\'s get you started', style: texts.headline),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'Your profile is visible to work givers after you verify your phone.',
+              'Tell us how you will use Jobmate. Your account is created with this role.',
               style: texts.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            const RequiredLabel(text: 'I want to'),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: _RoleOption(
+                    role: UserRole.worker,
+                    icon: Icons.handyman_rounded,
+                    color: AppColors.workerPrimary,
+                    selected: _role == UserRole.worker,
+                    onTap: () => setState(() => _role = UserRole.worker),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: _RoleOption(
+                    role: UserRole.workGiver,
+                    icon: Icons.business_center_rounded,
+                    color: AppColors.giverPrimary,
+                    selected: _role == UserRole.workGiver,
+                    onTap: () => setState(() => _role = UserRole.workGiver),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.lg),
             if (auth.error != null) ...<Widget>[
@@ -254,6 +282,74 @@ class _TermsCheckbox extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// One of the two account roles the user can sign up as. The choice is sent to
+/// the backend at registration and fixed for the life of the account.
+class _RoleOption extends StatelessWidget {
+  const _RoleOption({
+    required this.role,
+    required this.icon,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final UserRole role;
+  final IconData icon;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme texts = Theme.of(context).textTheme;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '${role.label}. ${role.tagline}',
+      child: Material(
+        color: selected ? Color.lerp(color, Colors.white, 0.9) : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.md,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(
+                color: selected ? color : AppColors.border,
+                width: selected ? 1.6 : 1.2,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Icon(
+                  icon,
+                  size: 22,
+                  color: selected ? color : AppColors.textSecondary,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  role.label,
+                  style: texts.labelLarge?.copyWith(
+                    color: selected ? color : AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(role.tagline, style: texts.caption),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

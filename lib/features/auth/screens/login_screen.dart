@@ -9,7 +9,6 @@ import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/app_dialogs.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/app_top_bar.dart';
-import '../../../models/enums.dart';
 import '../../../navigation/app_router.dart';
 import '../../../state/auth_provider.dart';
 import 'splash_screen.dart';
@@ -147,141 +146,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.sm),
-              _RoleSwitchCard(),
               const SizedBox(height: AppSpacing.md),
               _DemoHint(
                 onAdminTap: () => AppRouter.push(context, AppRoutes.adminLogin),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Lets anyone jump straight into either role without signing in (demo helper).
-class _RoleSwitchCard extends StatelessWidget {
-  const _RoleSwitchCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final AuthProvider auth = context.watch<AuthProvider>();
-    final TextTheme texts = Theme.of(context).textTheme;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppShadows.subtle,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(Icons.bolt_rounded, size: 17, color: context.primary),
-              const SizedBox(width: 6),
-              Text('Try it as', style: texts.labelLarge),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: _RoleButton(
-                  role: UserRole.worker,
-                  color: AppColors.workerPrimary,
-                  icon: Icons.handyman_rounded,
-                  isActive: auth.role == UserRole.worker,
-                  onTap: () => auth.selectRole(UserRole.worker),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: _RoleButton(
-                  role: UserRole.workGiver,
-                  color: AppColors.giverPrimary,
-                  icon: Icons.business_center_rounded,
-                  isActive: auth.role == UserRole.workGiver,
-                  onTap: () => auth.selectRole(UserRole.workGiver),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Or tap a role above to jump straight into that home screen.',
-            style: texts.caption,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RoleButton extends StatelessWidget {
-  const _RoleButton({
-    required this.role,
-    required this.color,
-    required this.icon,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  final UserRole role;
-  final Color color;
-  final IconData icon;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: isActive,
-      child: Material(
-        color: isActive
-            ? Color.lerp(color, Colors.white, 0.9)
-            : AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: AppSpacing.sm,
-            ),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(
-                color: isActive ? color : AppColors.border,
-                width: isActive ? 1.6 : 1,
-              ),
-            ),
-            child: Row(
-              children: <Widget>[
-                Icon(
-                  icon,
-                  size: 18,
-                  color: isActive ? color : AppColors.textSecondary,
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    role.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: isActive ? color : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ),

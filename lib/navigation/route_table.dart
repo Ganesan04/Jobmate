@@ -14,7 +14,6 @@ import '../features/auth/screens/onboarding_screen.dart';
 import '../features/auth/screens/otp_screen.dart';
 import '../features/auth/screens/profile_setup_screen.dart';
 import '../features/auth/screens/register_screen.dart';
-import '../features/auth/screens/role_selection_screen.dart';
 import '../features/common/screens/chat_screen.dart';
 import '../features/common/screens/contact_support_screen.dart';
 import '../features/common/screens/help_screen.dart';
@@ -90,8 +89,6 @@ abstract final class RouteTable {
         return const RegisterScreen();
       case AppRoutes.otp:
         return const OtpScreen();
-      case AppRoutes.roleSelection:
-        return const RoleSelectionScreen();
       case AppRoutes.profileSetup:
         return const ProfileSetupScreen();
       case AppRoutes.forgotPassword:

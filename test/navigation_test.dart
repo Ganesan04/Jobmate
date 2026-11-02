@@ -98,23 +98,22 @@ void main() {
     expect(auth.stage, AppStage.auth);
   });
 
-  testWidgets('switching role swaps the theme and the tab set', (
+  testWidgets('signing in as a work giver shows the giver theme and tab set', (
     WidgetTester tester,
   ) async {
-    final AuthProvider auth = await pumpSignedIn(tester);
+    await pumpApp(tester);
+    final BuildContext context = tester.element(find.byType(MaterialApp).first);
+    final AuthProvider auth = Provider.of<AuthProvider>(context, listen: false);
+    auth.completeOnboarding();
+    await tester.pumpAndSettle();
+    await auth.signIn(identifier: 'aarav@brightevents.in', password: 'jobmate123');
+    await tester.pumpAndSettle();
+
+    expect(auth.role, UserRole.workGiver);
     final MaterialApp app = tester.widget<MaterialApp>(
       find.byType(MaterialApp),
     );
-    expect(app.theme?.colorScheme.primary, isNot(const Color(0xFF7C3AED)));
-
-    final bool ok = await auth.switchRole(UserRole.workGiver);
-    expect(ok, isTrue);
-    await tester.pumpAndSettle();
-
-    final MaterialApp updated = tester.widget<MaterialApp>(
-      find.byType(MaterialApp),
-    );
-    expect(updated.theme?.colorScheme.primary, const Color(0xFF7C3AED));
+    expect(app.theme?.colorScheme.primary, const Color(0xFF7C3AED));
     expect(find.text('My jobs'), findsWidgets);
   });
 

@@ -47,8 +47,6 @@ void main() {
 
     unawaited(auth.signIn(identifier: 'meera@shop.in', password: 'jobmate123'));
     await tester.pump(const Duration(seconds: 2));
-    unawaited(auth.switchRole(UserRole.workGiver));
-    await tester.pump(const Duration(seconds: 1));
     unawaited(giver.load());
     await tester.pump(const Duration(seconds: 2));
     await tester.pump();
