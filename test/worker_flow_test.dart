@@ -216,6 +216,27 @@ void main() {
       );
     });
 
+    test('an account cannot apply to a job it posted', () async {
+      // One account both hires and works: here the giver is in worker mode.
+      final WorkerProvider worker = await buildWorker();
+      worker.setWorkerId('u-giver-1');
+      final AppRepositories repositories = buildFakeRepositories();
+      final Job own = (await repositories.jobs.activeJobs()).firstWhere(
+        (Job job) => job.giverId == 'u-giver-1',
+      );
+
+      final JobApplication? created = await worker.apply(
+        job: own,
+        message: 'Applying to my own posting.',
+        availability: '1',
+      );
+      expect(created, isNull);
+      expect(
+        worker.applyError,
+        'You posted this job, so you cannot apply to it.',
+      );
+    });
+
     test('a worker cannot apply to the same job twice', () async {
       final WorkerProvider worker = await buildWorker();
       final AppRepositories repositories = buildFakeRepositories();

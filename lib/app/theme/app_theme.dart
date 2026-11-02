@@ -325,10 +325,3 @@ ThemeData buildGiverTheme() => buildAppTheme(
   AppColors.giverSecondary,
   AppColors.giverSurface,
 );
-
-/// Neutral, professional theme for the admin console.
-ThemeData buildAdminTheme() => buildAppTheme(
-  AppColors.adminAccent,
-  AppColors.adminPrimary,
-  AppColors.adminSurface,
-);

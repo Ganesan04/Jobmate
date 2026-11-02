@@ -72,8 +72,6 @@ class FakeBackend {
       <String, Map<String, dynamic>>{};
   final Map<String, List<Map<String, dynamic>>> _supportReports =
       <String, List<Map<String, dynamic>>>{};
-  final Map<String, Map<String, dynamic>> _disputes =
-      <String, Map<String, dynamic>>{};
   final Map<String, Map<String, dynamic>> _ratings =
       <String, Map<String, dynamic>>{};
   final Set<String> _savedJobKeys = <String>{};
@@ -137,7 +135,6 @@ class FakeBackend {
   static const String workerEmail = 'ravi@jobmate.in';
   static const String giverEmail = 'meera@shop.in';
   static const String secondGiverEmail = 'arjun@care.in';
-  static const String adminEmail = 'admin@jobmate.in';
   static const String password = 'jobmate123';
 
   /// The check-in code issued for the seeded open shift. The API only ever hands
@@ -201,14 +198,6 @@ class FakeBackend {
       ..['rating'] = 4.3
       ..['reviewCount'] = 18;
     secondGiverId = secondGiver['id'] as String;
-
-    _createUser(
-      name: 'Site Admin',
-      phone: '9000000003',
-      email: adminEmail,
-      password: password,
-      role: 'Admin',
-    );
 
     // A second worker, so the giver has someone to shortlist besides Ravi.
     _createUser(
@@ -322,25 +311,14 @@ class FakeBackend {
       },
     ];
 
-    // A pending verification for the admin console to approve.
+    // An approved identity check; the API approves on submission.
     _verifications[_id('ver')] = <String, dynamic>{
       'id': _id('ver'),
       'userId': workerId!,
       'type': 'Identity',
-      'status': 'Pending',
+      'status': 'Approved',
       'submittedAt': _nowIso(),
       'documentName': 'aadhaar.pdf',
-      'note': 'Under review, usually within 24 hours',
-    };
-
-    // An open dispute for the admin console.
-    _disputes[_id('dsp')] = <String, dynamic>{
-      'id': _id('dsp'),
-      'jobId': jobIds[1],
-      'raisedBy': workerId!,
-      'reason': 'Payment not received',
-      'status': 'Open',
-      'createdAt': _nowIso(),
     };
   }
 
@@ -556,9 +534,6 @@ class FakeBackend {
             'reset-password',
           }.contains(segments.length > 3 ? segments[3] : '');
     }
-    if (segments[2] == 'admin' && segments.length > 4) {
-      return segments[3] == 'auth' && segments[4] == 'login';
-    }
     return false;
   }
 
@@ -606,12 +581,8 @@ class FakeBackend {
         await _verificationsRoute(request, method, rest, body, userId!);
       case 'support-reports':
         await _supportRoute(request, method, rest, body, userId!);
-      case 'disputes':
-        await _disputesRoute(request, method, rest, body, userId!);
       case 'devices':
         await _devicesRoute(request, method, rest, body, userId!);
-      case 'admin':
-        await _adminRoute(request, method, rest, body, userId!);
       default:
         await _write(request, 404, error: 'Not found: /$section');
     }
@@ -637,6 +608,8 @@ class FakeBackend {
         await _login(request, body);
       case 'verify-otp':
         await _verifyOtp(request, body);
+      case 'switch-role':
+        await _switchRole(request, body, userId!);
       case 'resend-otp':
         await _resendOtp(request, body);
       case 'refresh':
@@ -685,7 +658,8 @@ class FakeBackend {
       phone: phone,
       email: email,
       password: (body?['password'] ?? '').toString(),
-      role: (body?['role'] ?? 'worker').toString(),
+      // Every account can work and hire; it starts in worker mode.
+      role: 'Worker',
     );
     user['area'] = (body?['area'] ?? '').toString();
     user['skills'] = <String>[];
@@ -725,16 +699,23 @@ class FakeBackend {
     }
 
     _otpByPhone.remove(phone);
-    final Map<String, dynamic> user = _users[id]!;
-    final String requestedRole = (body?['role'] ?? user['role']).toString();
-    // A role is fixed at verification time, matching the API's behaviour.
-    user['role'] = requestedRole;
+    await _write(request, 200, data: _sessionFor(id));
+  }
 
-    await _write(
-      request,
-      200,
-      data: <String, dynamic>{..._sessionFor(id), 'user': _userDto(user)},
-    );
+  /// Moves the caller into worker or work giver mode and reissues the session,
+  /// like the API, whose token carries the active mode.
+  Future<void> _switchRole(
+    HttpRequest request,
+    Map<String, dynamic>? body,
+    String userId,
+  ) async {
+    final String role = (body?['role'] ?? '').toString();
+    if (role != 'worker' && role != 'workGiver') {
+      await _write(request, 400, error: 'Choose worker or workGiver.');
+      return;
+    }
+    _users[userId]!['role'] = role == 'worker' ? 'Worker' : 'WorkGiver';
+    await _write(request, 200, data: _sessionFor(userId));
   }
 
   Future<void> _resendOtp(HttpRequest request, Map<String, dynamic>? body) async {
@@ -1048,6 +1029,10 @@ class FakeBackend {
     final Map<String, dynamic>? job = _jobs[jobId];
     if (job == null) {
       await _write(request, 404, error: 'That job could not be found.');
+      return;
+    }
+    if (job['giverId'] == userId) {
+      await _write(request, 400, error: 'You cannot apply to your own job.');
       return;
     }
     if (job['status'] != 'Active') {
@@ -1528,7 +1513,6 @@ class FakeBackend {
     return <String, dynamic>{
       'totalEarned': total,
       'pendingAmount': pending,
-      'disputedAmount': 0,
       'currency': 'INR',
     };
   }
@@ -1998,10 +1982,10 @@ class FakeBackend {
           'id': _id('ver'),
           'userId': userId,
           'type': type,
-          'status': 'Pending',
+          // Approved on submission: there is no reviewer.
+          'status': 'Approved',
           'submittedAt': _nowIso(),
           'documentName': body?['documentName'],
-          'note': 'Under review, usually within 24 hours',
         };
         _verifications[record['id'] as String] = record;
         await _write(request, 201, data: record);
@@ -2021,7 +2005,7 @@ class FakeBackend {
             ? 'Verified'
             : 'NotVerified',
         'identity': mine.any((Map<String, dynamic> v) => v['type'] == 'Identity')
-            ? 'Pending'
+              ? 'Verified'
             : 'NotVerified',
         'skills': 'NotVerified',
       });
@@ -2076,47 +2060,6 @@ class FakeBackend {
     await _write(request, 405, error: 'Method not allowed');
   }
 
-  // --------------------------------------------------------------- disputes
-
-  Future<void> _disputesRoute(
-    HttpRequest request,
-    String method,
-    List<String> rest,
-    Map<String, dynamic>? body,
-    String userId,
-  ) async {
-    if (rest.isEmpty) {
-      if (method == 'GET') {
-        await _writePaged(
-          request,
-          _disputes.values
-              .where((Map<String, dynamic> d) => d['raisedBy'] == userId)
-              .toList(),
-        );
-        return;
-      }
-      if (method == 'POST') {
-        final Map<String, dynamic> dispute = <String, dynamic>{
-          'id': _id('dsp'),
-          'jobId': body?['jobId'],
-          'raisedBy': userId,
-          'reason': (body?['reason'] ?? '').toString(),
-          'status': 'Open',
-          'createdAt': _nowIso(),
-        };
-        _disputes[dispute['id'] as String] = dispute;
-        await _write(request, 201, data: dispute);
-        return;
-      }
-    }
-    final Map<String, dynamic>? dispute = _disputes[rest[0]];
-    if (dispute == null) {
-      await _write(request, 404, error: 'That dispute could not be found.');
-      return;
-    }
-    await _write(request, 200, data: dispute);
-  }
-
   // ---------------------------------------------------------------- devices
 
   Future<void> _devicesRoute(
@@ -2135,133 +2078,6 @@ class FakeBackend {
       return;
     }
     await _write(request, 200, data: true);
-  }
-
-  // ------------------------------------------------------------------ admin
-
-  Future<void> _adminRoute(
-    HttpRequest request,
-    String method,
-    List<String> rest,
-    Map<String, dynamic>? body,
-    String userId,
-  ) async {
-    if (rest.isEmpty) {
-      await _write(request, 404, error: 'Not found');
-      return;
-    }
-
-    if (rest[0] == 'auth' && rest.length > 1 && rest[1] == 'login') {
-      final String identifier =
-          (body?['identifier'] ?? body?['email'] ?? '').toString().trim();
-      final String? id = _userByLogin[identifier];
-      if (id == null || _users[id]!['password'] != '${body?['password']}') {
-        await _write(request, 401, error: 'Those details do not match an account.');
-        return;
-      }
-      _users[id]!['role'] = 'Admin';
-      await _write(request, 200, data: _sessionFor(id));
-      return;
-    }
-
-    final Map<String, dynamic>? actor = _users[userId];
-    if (actor == null || actor['role'] != 'Admin') {
-      await _write(request, 403, error: 'This area is for administrators.');
-      return;
-    }
-
-    switch (rest[0]) {
-      case 'dashboard':
-        await _write(request, 200, data: <String, dynamic>{
-          'totalUsers': _users.length,
-          'totalJobs': _jobs.length,
-          'openDisputes': _disputes.values
-              .where((Map<String, dynamic> d) => d['status'] == 'Open')
-              .length,
-          'pendingVerifications': _verifications.values
-              .where((Map<String, dynamic> v) => v['status'] == 'Pending')
-              .length,
-        });
-      case 'users':
-        if (rest.length > 2 && rest[2] == 'status') {
-          final Map<String, dynamic>? target = _users[rest[1]];
-          if (target == null) {
-            await _write(request, 404, error: 'That user could not be found.');
-            return;
-          }
-          target['status'] = (body?['status'] ?? 'Active').toString();
-          await _write(request, 200, data: _userDto(target));
-          return;
-        }
-        await _writePaged(request, _users.values.map(_userDto).toList());
-      case 'jobs':
-        if (rest.length > 1) {
-          final Map<String, dynamic>? job = _jobs[rest[1]];
-          if (job == null) {
-            await _write(request, 404, error: 'That job could not be found.');
-            return;
-          }
-          if (method == 'DELETE') {
-            _jobs.remove(rest[1]);
-            await _write(request, 200, data: true);
-            return;
-          }
-          await _write(request, 200, data: _jobDto(job));
-          return;
-        }
-        await _writePaged(request, _jobs.values.map(_jobDto).toList());
-      case 'disputes':
-        if (rest.length > 1) {
-          final Map<String, dynamic>? dispute = _disputes[rest[1]];
-          if (dispute == null) {
-            await _write(request, 404, error: 'That dispute could not be found.');
-            return;
-          }
-          if (rest.length > 2) {
-            dispute['status'] = rest[2] == 'resolve' ? 'Resolved' : 'UnderReview';
-            dispute['resolution'] = body?['resolution'];
-          }
-          await _write(request, 200, data: dispute);
-          return;
-        }
-        await _writePaged(request, _disputes.values.toList());
-      case 'verifications':
-        if (rest.length > 2) {
-          final Map<String, dynamic>? record = _verifications[rest[1]];
-          if (record == null) {
-            await _write(request, 404, error: 'That request could not be found.');
-            return;
-          }
-          record['status'] = rest[2] == 'approve' ? 'Verified' : 'Rejected';
-          record['reviewedAt'] = _nowIso();
-          await _write(request, 200, data: record);
-          return;
-        }
-        await _writePaged(request, _verifications.values.toList());
-      case 'support-reports':
-        if (rest.length > 2) {
-          final String reportId = rest[1];
-          for (final List<Map<String, dynamic>> rows in _supportReports.values) {
-            final Map<String, dynamic>? report = _findNotification(rows, reportId);
-            if (report != null) {
-              report['status'] = 'Resolved';
-              await _write(request, 200, data: report);
-              return;
-            }
-          }
-          await _write(request, 404, error: 'That report could not be found.');
-          return;
-        }
-        await _writePaged(
-          request,
-          <Map<String, dynamic>>[
-            for (final List<Map<String, dynamic>> rows in _supportReports.values)
-              ...rows,
-          ],
-        );
-      default:
-        await _write(request, 404, error: 'Not found: /admin/${rest[0]}');
-    }
   }
 
   // ------------------------------------------------------------------ DTOs

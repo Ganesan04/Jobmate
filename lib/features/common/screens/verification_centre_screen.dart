@@ -15,6 +15,9 @@ import '../../../models/user.dart';
 import '../../../state/auth_provider.dart';
 
 /// Verification centre: trust score plus per-item submission and status.
+///
+/// Verification belongs to the person, not the mode, so the same checklist and
+/// badge show whether the account is working or hiring.
 class VerificationCentreScreen extends StatelessWidget {
   const VerificationCentreScreen({super.key});
 
@@ -55,7 +58,7 @@ class VerificationCentreScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: AppSpacing.xs),
                           Text(
-                            'Verified profiles get 3x more job invites.',
+                            'Counts for both finding work and hiring.',
                             style: texts.caption,
                           ),
                         ],
@@ -103,16 +106,9 @@ class VerificationCentreScreen extends StatelessWidget {
   }
 
   Future<void> _submit(BuildContext context, VerificationRecord record) async {
-    if (record.status == VerificationStatus.verified ||
-        record.status == VerificationStatus.pending) {
+    if (record.status == VerificationStatus.verified) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            record.status == VerificationStatus.verified
-                ? '${record.type.label} is already verified'
-                : '${record.type.label} is under review',
-          ),
-        ),
+        SnackBar(content: Text('${record.type.label} is already verified')),
       );
       return;
     }
@@ -134,7 +130,8 @@ class VerificationCentreScreen extends StatelessWidget {
         !context.mounted) {
       return;
     }
-    final bool ok = await context.read<AuthProvider>().submitVerification(
+    final AuthProvider auth = context.read<AuthProvider>();
+    final bool ok = await auth.submitVerification(
       record.type,
       documentName: documentName.trim(),
     );
@@ -142,8 +139,12 @@ class VerificationCentreScreen extends StatelessWidget {
     if (ok) {
       await showSuccessDialog(
         context,
-        title: 'Submitted for review',
-        message: '${record.type.label} will be verified within 24 hours.',
+        title: '${record.type.label} verified',
+        message: 'Your badge is updated for both finding work and hiring.',
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(auth.error ?? 'Could not submit. Try again.')),
       );
     }
   }

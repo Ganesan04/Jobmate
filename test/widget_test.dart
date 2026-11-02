@@ -45,14 +45,6 @@ void main() {
         AppRoutes.verificationCentre,
         AppRoutes.workHistory,
         AppRoutes.forgotPassword,
-        AppRoutes.adminLogin,
-        AppRoutes.adminShell,
-        AppRoutes.adminDashboard,
-        AppRoutes.adminUsers,
-        AppRoutes.adminJobs,
-        AppRoutes.adminDisputes,
-        AppRoutes.adminVerifications,
-        AppRoutes.adminSettings,
       ];
 
       for (final String name in names) {
@@ -68,6 +60,21 @@ void main() {
         RouteTable.onGenerateRoute(const RouteSettings(name: '/nope')),
         isNull,
       );
+    });
+
+    test('the admin console routes are gone', () {
+      for (final String name in <String>[
+        '/admin/login',
+        '/admin/shell',
+        '/admin/dashboard',
+        '/admin/verifications',
+      ]) {
+        expect(
+          RouteTable.onGenerateRoute(RouteSettings(name: name)),
+          isNull,
+          reason: '$name should no longer resolve',
+        );
+      }
     });
 
     test('builds argument driven screens', () {

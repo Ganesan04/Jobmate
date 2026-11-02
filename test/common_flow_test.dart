@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jobmate/app.dart';
+import 'package:jobmate/core/constants/app_colors.dart';
 import 'package:jobmate/features/common/screens/chat_screen.dart';
 import 'package:jobmate/features/common/screens/help_screen.dart';
 import 'package:jobmate/features/common/screens/messages_screen.dart';
@@ -158,7 +159,7 @@ void main() {
       expect(session.notifications.unreadCount, 0);
     });
 
-    testWidgets('verification centre submits a pending verification', (
+    testWidgets('verification centre verifies a submission straight away', (
       WidgetTester tester,
     ) async {
       useTallSurface(tester);
@@ -170,12 +171,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(VerificationCentreScreen), findsOneWidget);
 
-      int pendingCount() => session.auth.verificationSummary.all
+      int verifiedCount() => session.auth.verifications
           .where(
-            (VerificationStatus status) => status == VerificationStatus.pending,
+            (VerificationRecord r) => r.status == VerificationStatus.verified,
           )
           .length;
-      final int pendingBefore = pendingCount();
+      final int verifiedBefore = verifiedCount();
       expect(find.text('Submit for verification'), findsWidgets);
 
       await tester.tap(find.text('Submit for verification').first);
@@ -186,18 +187,20 @@ void main() {
       // Submitting has a mock latency, so let it resolve before asserting.
       await tester.pump(const Duration(milliseconds: 600));
       await tester.pumpAndSettle();
-      expect(find.text('Submitted for review'), findsOneWidget);
+      // There is no reviewer any more: the check is approved on submission.
+      expect(
+        find.text('Your badge is updated for both finding work and hiring.'),
+        findsOneWidget,
+      );
       await tester.tap(find.text('Done'));
       await tester.pumpAndSettle();
 
-      expect(pendingCount(), pendingBefore + 1);
+      expect(verifiedCount(), verifiedBefore + 1);
       expect(
         session.auth.verifications.any(
-          (VerificationRecord r) =>
-              r.status == VerificationStatus.pending &&
-              r.documentName.isNotEmpty,
+          (VerificationRecord r) => r.status == VerificationStatus.pending,
         ),
-        isTrue,
+        isFalse,
       );
     });
 
@@ -287,23 +290,41 @@ void main() {
       expect(session.auth.user, isNull);
     });
 
-    testWidgets('switch role from profile moves the session to giver', (
+    testWidgets('switch role from profile moves to giver and back', (
       WidgetTester tester,
     ) async {
       useTallSurface(tester);
       final session = await pumpSession(tester, '9876543210');
       expect(session.auth.role, UserRole.worker);
 
-      await openTab(tester, 'Profile');
-      await tester.tap(find.text('Switch role'));
-      await tester.pumpAndSettle();
-      expect(find.text('Switch to Work Giver?'), findsOneWidget);
-      await tester.tap(find.widgetWithText(FilledButton, 'Switch role'));
-      await tester.pumpAndSettle();
+      Color primary() => tester
+          .widget<MaterialApp>(find.byType(MaterialApp))
+          .theme!
+          .colorScheme
+          .primary;
 
+      Future<void> switchVia(String target) async {
+        await openTab(tester, 'Profile');
+        await tester.tap(find.text('Switch role'));
+        await tester.pumpAndSettle();
+        expect(find.text('Switch to $target?'), findsOneWidget);
+        await tester.tap(find.widgetWithText(FilledButton, 'Switch role'));
+        await tester.pumpAndSettle();
+      }
+
+      await switchVia('Work Giver');
       expect(session.auth.role, UserRole.workGiver);
       expect(session.auth.user?.role, UserRole.workGiver);
+      expect(primary(), AppColors.giverPrimary);
       expect(find.text('My jobs'), findsOneWidget);
+      expect(find.text('Find work'), findsNothing);
+
+      // Same account, back to working: theme and tabs follow straight away.
+      await switchVia('Worker');
+      expect(session.auth.role, UserRole.worker);
+      expect(primary(), AppColors.workerPrimary);
+      expect(find.text('Find work'), findsWidgets);
+      expect(find.text('My jobs'), findsNothing);
     });
   });
 }

@@ -4,7 +4,6 @@ abstract final class Validators {
   static final RegExp _email = RegExp(r'^[\w.+-]+@[\w-]+\.[\w.-]+$');
   static final RegExp _phone = RegExp(r'^[6-9]\d{9}$');
   static final RegExp _digits = RegExp(r'^\d+$');
-  static final RegExp _upto6 = RegExp(r'^\d{4,6}$');
   static final RegExp _upi = RegExp(r'^[\w.\-]{2,}@[a-zA-Z]{2,}$');
   static final RegExp _nameLetters = RegExp(r"^[A-Za-z][A-Za-z\s.'-]*$");
 
@@ -98,13 +97,6 @@ abstract final class Validators {
   static String? upiId(String? value) {
     if (value == null || value.trim().isEmpty) return 'UPI ID is required';
     if (!_upi.hasMatch(value.trim())) return 'Format: name@bank';
-    return null;
-  }
-
-  static String? adminOtp(String? value) {
-    if (value == null || value.isEmpty) return 'Enter the 6-digit code';
-    if (value.length != 6) return 'The code has 6 digits';
-    if (!_upto6.hasMatch(value)) return 'Digits only';
     return null;
   }
 }

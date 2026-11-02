@@ -73,7 +73,8 @@ class _ApplyScreenState extends State<ApplyScreen> {
     final Job? job = _job;
     if (job == null) return;
     setState(() => _busy = true);
-    final JobApplication? created = await context.read<WorkerProvider>().apply(
+    final WorkerProvider worker = context.read<WorkerProvider>();
+    final JobApplication? created = await worker.apply(
       job: job,
       message: _message.text.trim(),
       expectedPay: int.tryParse(_expectedPay.text),
@@ -83,7 +84,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
     if (created == null) {
       setState(() {
         _busy = false;
-        _error = 'You have already applied for this job.';
+        _error = worker.applyError ?? 'You have already applied for this job.';
       });
       return;
     }

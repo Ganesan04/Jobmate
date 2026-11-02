@@ -195,9 +195,21 @@ class ProfileScreen extends StatelessWidget {
       icon: Icons.swap_horiz_rounded,
     );
     if (!confirmed || !context.mounted) return;
+    final NavigatorState navigator = Navigator.of(context);
     final bool ok = await auth.switchRole(next);
-    if (!ok || !context.mounted) return;
+    if (!context.mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(auth.error ?? 'Could not switch role')),
+      );
+      return;
+    }
     AppRouter.popToRoot(context);
+    // An account that only ever hired has no skills yet, and workers are
+    // matched to jobs by skill, so the profile form is offered once.
+    if (next == UserRole.worker && (auth.user?.skills.isEmpty ?? false)) {
+      navigator.pushNamed(AppRoutes.editProfile);
+    }
   }
 }
 

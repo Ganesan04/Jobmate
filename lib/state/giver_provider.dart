@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import '../models/admin.dart';
 import '../models/application.dart';
+import '../models/earning.dart';
 import '../models/enums.dart';
 import '../models/job.dart';
 import '../models/job_draft.dart';

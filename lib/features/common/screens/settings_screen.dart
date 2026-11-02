@@ -113,7 +113,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onChanged: (bool value) =>
                     setState(() => _paymentAlerts = value),
                 title: const Text('Payment alerts'),
-                subtitle: const Text('Payment released or disputed'),
+                subtitle: const Text('Payment released or confirmed'),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md,
                 ),

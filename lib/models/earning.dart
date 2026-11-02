@@ -69,3 +69,26 @@ class EarningSummary {
 
   int get total => earned + pending;
 }
+
+/// A released payment, as returned by the payments endpoints.
+class PaymentReceipt {
+  const PaymentReceipt({
+    required this.paymentId,
+    required this.amount,
+    required this.method,
+    required this.paidAt,
+    required this.workerName,
+    this.fee = 0,
+    this.overtime = 0,
+  });
+
+  final String paymentId;
+  final int amount;
+  final PaymentMethod method;
+  final DateTime paidAt;
+  final String workerName;
+  final int fee;
+  final int overtime;
+
+  int get base => amount - fee - overtime;
+}

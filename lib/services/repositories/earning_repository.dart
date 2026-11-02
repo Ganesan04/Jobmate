@@ -1,4 +1,3 @@
-import '../../models/admin.dart';
 import '../../models/earning.dart';
 import '../../models/enums.dart';
 
@@ -17,8 +16,6 @@ abstract class EarningRepository {
   Future<int> totalEarned(String workerId);
 
   Future<int> pendingAmount(String workerId);
-
-  Future<int> disputedAmount(String workerId);
 
   /// Month label -> totals, newest month first.
   Future<List<EarningSummary>> monthlySummary(String workerId);

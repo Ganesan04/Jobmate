@@ -273,3 +273,24 @@ class WorkHistoryEntry {
     );
   }
 }
+
+/// A completed giver -> worker rating.
+class WorkerRating {
+  const WorkerRating({
+    required this.id,
+    required this.jobId,
+    required this.workerId,
+    required this.giverId,
+    required this.stars,
+    this.feedback = '',
+    this.createdAt,
+  });
+
+  final String id;
+  final String jobId;
+  final String workerId;
+  final String giverId;
+  final int stars;
+  final String feedback;
+  final DateTime? createdAt;
+}

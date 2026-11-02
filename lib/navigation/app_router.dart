@@ -47,16 +47,6 @@ abstract final class AppRoutes {
   static const String verificationCentre = '/verification';
   static const String workHistory = '/work-history';
   static const String forgotPassword = '/forgot-password';
-
-  // Admin
-  static const String adminLogin = '/admin/login';
-  static const String adminShell = '/admin/shell';
-  static const String adminDashboard = '/admin/dashboard';
-  static const String adminUsers = '/admin/users';
-  static const String adminJobs = '/admin/jobs';
-  static const String adminDisputes = '/admin/disputes';
-  static const String adminVerifications = '/admin/verifications';
-  static const String adminSettings = '/admin/settings';
 }
 
 /// Builds routes and exposes small push helpers.

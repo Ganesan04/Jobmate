@@ -7,7 +7,6 @@ import 'models/enums.dart';
 import 'navigation/app_router.dart';
 import 'navigation/route_table.dart';
 import 'services/service_locator.dart';
-import 'state/admin_provider.dart';
 import 'state/auth_provider.dart';
 import 'state/chat_provider.dart';
 import 'state/giver_provider.dart';
@@ -79,9 +78,6 @@ List<SingleChildWidget> providersFor(AppRepositories repositories) {
     ChangeNotifierProvider<SupportProvider>(
       create: (_) => SupportProvider(repository: repositories.help),
     ),
-    ChangeNotifierProvider<AdminProvider>(
-      create: (_) => AdminProvider(repository: repositories.admin),
-    ),
     ChangeNotifierProvider<NavigationState>(create: (_) => NavigationState()),
   ];
 }
@@ -102,6 +98,7 @@ class _AppViewState extends State<_AppView> {
 
   late final AuthProvider _auth = context.read<AuthProvider>();
   AppStage _lastStage = AppStage.splash;
+  UserRole? _lastRole;
 
   @override
   void initState() {
@@ -119,17 +116,31 @@ class _AppViewState extends State<_AppView> {
 
   /// User data is fetched once a session is ready, not at launch, so nothing is
   /// requested without a token and a new sign-in never shows the last user's data.
+  ///
+  /// The session's token only carries the active mode, so worker and giver data
+  /// are loaded for that mode alone, and reloaded whenever the user switches.
   void _onAuthChanged() {
     final AppStage stage = _auth.stage;
-    if (stage == AppStage.ready && _lastStage != AppStage.ready) {
-      context.read<JobFeedProvider>().load();
-      context.read<WorkerProvider>().load();
-      context.read<GiverProvider>().load();
+    final UserRole role = _auth.role;
+    final bool becameReady =
+        stage == AppStage.ready && _lastStage != AppStage.ready;
+    final bool switched =
+        stage == AppStage.ready && !becameReady && role != _lastRole;
+    if (becameReady) {
       context.read<ChatProvider>().load();
       context.read<NotificationProvider>().load();
       context.read<SupportProvider>().load();
     }
+    if (becameReady || switched) {
+      if (role == UserRole.worker) {
+        context.read<JobFeedProvider>().load();
+        context.read<WorkerProvider>().load();
+      } else {
+        context.read<GiverProvider>().load();
+      }
+    }
     _lastStage = stage;
+    _lastRole = role;
   }
 
   @override

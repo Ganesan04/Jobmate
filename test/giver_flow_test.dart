@@ -7,7 +7,6 @@ import 'package:jobmate/core/widgets/app_text_field.dart';
 import 'package:jobmate/features/giver/screens/create_job_screen.dart';
 import 'package:jobmate/features/giver/screens/giver_home_screen.dart';
 import 'package:jobmate/features/giver/screens/my_jobs_screen.dart';
-import 'package:jobmate/models/admin.dart';
 import 'package:jobmate/models/application.dart';
 import 'package:jobmate/models/earning.dart';
 import 'package:jobmate/models/enums.dart';

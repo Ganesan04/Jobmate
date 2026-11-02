@@ -14,7 +14,7 @@ import '../../../state/auth_provider.dart';
 import 'splash_screen.dart';
 
 /// Sign-in screen: identifier + password, demo credential hint, error/loading
-/// states, and links to register, forgot password and the admin console.
+/// states, and links to register and forgot password.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -147,9 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
-              _DemoHint(
-                onAdminTap: () => AppRouter.push(context, AppRoutes.adminLogin),
-              ),
+              const _DemoHint(),
             ],
           ),
         ),
@@ -159,9 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 class _DemoHint extends StatelessWidget {
-  const _DemoHint({required this.onAdminTap});
-
-  final VoidCallback onAdminTap;
+  const _DemoHint();
 
   @override
   Widget build(BuildContext context) {
@@ -195,15 +191,6 @@ class _DemoHint extends StatelessWidget {
             'Worker: 9876543210 or ravi.kumar@example.com\n'
             'Password: jobmate123',
             style: texts.caption?.copyWith(color: const Color(0xFF075985)),
-          ),
-          TextButton(
-            onPressed: onAdminTap,
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(0, 36),
-              alignment: Alignment.centerLeft,
-            ),
-            child: const Text('Open admin console'),
           ),
         ],
       ),

@@ -1,4 +1,3 @@
-import '../../../models/admin.dart';
 import '../../../models/earning.dart';
 import '../../../models/enums.dart';
 import '../../api/api_client.dart';
@@ -39,10 +38,6 @@ class ApiEarningRepository implements EarningRepository {
   @override
   Future<int> pendingAmount(String workerId) async =>
       (await _walletTotals()).integer('pendingAmount');
-
-  @override
-  Future<int> disputedAmount(String workerId) async =>
-      (await _walletTotals()).integer('disputedAmount');
 
   @override
   Future<List<EarningSummary>> monthlySummary(String workerId) async {
