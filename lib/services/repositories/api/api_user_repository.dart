@@ -17,7 +17,6 @@ class ApiUserRepository implements UserRepository {
   /// Cached so the shell does not refetch the profile on every rebuild. Reset by
   /// [signIn] and [signOut].
   UserProfile? _current;
-  String? _currentId;
 
   @override
   Future<UserProfile?> currentUser() async {
@@ -27,7 +26,6 @@ class ApiUserRepository implements UserRepository {
       final Map<String, dynamic> body = await _api.get('/api/v1/profile/me');
       final Map<String, dynamic> profile = body.dataMap();
       _current = Mappers.userProfile(profile.object('user'));
-      _currentId = _current!.id;
       return _current;
     } on ApiException {
       return null;
@@ -56,7 +54,6 @@ class ApiUserRepository implements UserRepository {
     required String phone,
     required String email,
     required String password,
-    required UserRole role,
     String area = '',
   }) async {
     final Map<String, dynamic> body = await _api.post(
@@ -66,7 +63,6 @@ class ApiUserRepository implements UserRepository {
         'phone': phone.trim(),
         'email': email.trim(),
         'password': password,
-        'role': wireUserRole(role),
         'area': area.trim(),
       }, nulls: <String>{'email', 'area'}),
       authenticated: false,
@@ -82,15 +78,10 @@ class ApiUserRepository implements UserRepository {
   Future<UserProfile> verifyOtp({
     required String phone,
     required String otp,
-    required UserRole role,
   }) async {
     final Map<String, dynamic> body = await _api.post(
       '/api/v1/auth/verify-otp',
-      body: <String, dynamic>{
-        'phone': phone.trim(),
-        'code': otp.trim(),
-        'role': wireUserRole(role),
-      },
+      body: <String, dynamic>{'phone': phone.trim(), 'code': otp.trim()},
       authenticated: false,
     );
     return _adopt(body.dataMap());
@@ -162,11 +153,14 @@ class ApiUserRepository implements UserRepository {
   }
 
   @override
-  Future<UserRole> switchRole(UserRole role) async {
-    // Role changes go through re-authentication on the backend, so the app only
-    // reports the role it asked for and lets the profile refresh confirm it.
-    await setPresence(isOnline: _current?.isOnline ?? false);
-    return role;
+  Future<UserProfile> switchRole(UserRole role) async {
+    // The backend answers with a fresh token pair whose role claim is the new
+    // mode, so it is adopted exactly like a sign-in.
+    final Map<String, dynamic> body = await _api.post(
+      '/api/v1/auth/switch-role',
+      body: <String, dynamic>{'role': wireUserRole(role)},
+    );
+    return _adopt(body.dataMap());
   }
 
   @override
@@ -178,7 +172,6 @@ class ApiUserRepository implements UserRepository {
     }
     await _api.clearSession();
     _current = null;
-    _currentId = null;
   }
 
   @override
@@ -251,10 +244,6 @@ class ApiUserRepository implements UserRepository {
 
   UserProfile _cache(UserProfile profile) {
     _current = profile;
-    _currentId = profile.id;
     return profile;
   }
-
-  /// Exposed for the admin console, which needs the id of the signed-in admin.
-  String? get currentUserId => _currentId;
 }

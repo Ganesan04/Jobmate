@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import '../models/admin.dart';
 import '../models/application.dart';
+import '../models/earning.dart';
 import '../models/enums.dart';
 import '../models/job.dart';
 import '../models/job_draft.dart';
@@ -123,6 +123,21 @@ class GiverProvider extends ChangeNotifier {
 
   List<JobApplicant> applicantsForJob(String jobId) =>
       _applicantsByJob[jobId] ?? <JobApplicant>[];
+
+  /// Refetches one job's applicants. [load] only runs at sign-in, so without
+  /// this a worker who applies while the giver is signed in never shows up.
+  Future<void> refreshApplicants(String jobId) async {
+    try {
+      final List<JobApplicant> fresh = await _repository.applicantsForJob(jobId);
+      _applicantsByJob[jobId] = fresh;
+      _applicants = <JobApplicant>[
+        for (final List<JobApplicant> list in _applicantsByJob.values) ...list,
+      ];
+      notifyListeners();
+    } on ApiException {
+      // Keep the last known list rather than blanking the screen.
+    }
+  }
 
   Job jobById(String id) => _myJobs.firstWhere(
     (Job job) => job.id == id,

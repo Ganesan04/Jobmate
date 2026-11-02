@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jobmate/app.dart';
-import 'package:jobmate/features/admin/screens/admin_login_screen.dart';
 import 'package:jobmate/features/common/screens/profile_screen.dart';
 import 'package:jobmate/features/common/screens/settings_screen.dart';
 import 'package:jobmate/features/shell/app_shell.dart';
 import 'package:jobmate/models/enums.dart';
-import 'package:jobmate/navigation/app_router.dart';
 import 'package:jobmate/state/auth_provider.dart';
 import 'package:jobmate/state/navigation_state.dart';
 import 'package:provider/provider.dart';
@@ -115,18 +113,5 @@ void main() {
     );
     expect(app.theme?.colorScheme.primary, const Color(0xFF7C3AED));
     expect(find.text('My jobs'), findsWidgets);
-  });
-
-  testWidgets('admin console opens from its own route', (
-    WidgetTester tester,
-  ) async {
-    await pumpApp(tester);
-
-    final NavigatorState navigator = tester.state<NavigatorState>(
-      find.byType(Navigator),
-    );
-    navigator.pushNamed(AppRoutes.adminLogin);
-    await tester.pumpAndSettle();
-    expect(find.byType(AdminLoginScreen), findsOneWidget);
   });
 }

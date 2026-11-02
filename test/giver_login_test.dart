@@ -100,24 +100,64 @@ void main() {
     expect(auth.isAuthenticated, isFalse);
   });
 
-  test('a new account keeps the role chosen at registration', () async {
+  test(
+    'a new account signs up without a role and starts as a worker',
+    () async {
+      final AuthProvider auth = AuthProvider(
+        repository: buildFakeRepositories().users,
+      );
+      final bool registered = await auth.register(
+        name: 'New Member',
+        phone: '9800000000',
+        email: 'new.member@shop.in',
+        password: 'jobmate123',
+      );
+      expect(registered, isTrue);
+
+      final bool verified = await auth.verifyOtp('123456');
+      expect(verified, isTrue);
+      // No role is asked for: the entry flow goes straight to profile setup and
+      // the account opens in worker mode.
+      expect(auth.role, UserRole.worker);
+      expect(auth.stage, AppStage.profileSetup);
+    },
+  );
+
+  test('a switched role survives signing out and back in', () async {
     final AuthProvider auth = AuthProvider(
       repository: buildFakeRepositories().users,
     );
-    final bool registered = await auth.register(
-      name: 'New Giver',
-      phone: '9800000000',
-      email: 'new.giver@shop.in',
-      password: 'jobmate123',
-      role: UserRole.workGiver,
-    );
-    expect(registered, isTrue);
+    await auth.signIn(identifier: '9876543210', password: 'jobmate123');
+    expect(auth.role, UserRole.worker);
 
-    final bool verified = await auth.verifyOtp('123456');
-    expect(verified, isTrue);
-    // The role is the one fixed at registration, not a default, and the entry
-    // flow goes straight to profile setup instead of asking for a role again.
+    expect(await auth.switchRole(UserRole.workGiver), isTrue);
     expect(auth.role, UserRole.workGiver);
-    expect(auth.stage, AppStage.profileSetup);
+
+    await auth.signOut();
+    await auth.signIn(identifier: '9876543210', password: 'jobmate123');
+    expect(auth.role, UserRole.workGiver);
+
+    expect(await auth.switchRole(UserRole.worker), isTrue);
+    expect(auth.role, UserRole.worker);
+  });
+
+  test('verification is shared by both modes and approved on submit', () async {
+    final AuthProvider auth = AuthProvider(
+      repository: buildFakeRepositories().users,
+    );
+    await auth.signIn(identifier: '9876543210', password: 'jobmate123');
+
+    expect(await auth.submitVerification(VerificationType.address), isTrue);
+    expect(
+      auth.statusOf(VerificationType.address),
+      VerificationStatus.verified,
+    );
+
+    await auth.switchRole(UserRole.workGiver);
+    await auth.loadVerifications();
+    expect(
+      auth.statusOf(VerificationType.address),
+      VerificationStatus.verified,
+    );
   });
 }

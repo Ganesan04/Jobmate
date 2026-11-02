@@ -11,7 +11,8 @@ import '../services/repositories/user_repository.dart';
 /// Top level app stage — drives which entry flow is shown.
 enum AppStage { splash, onboarding, auth, profileSetup, ready }
 
-/// Owns the session: onboarding, credentials, OTP, role and profile setup.
+/// Owns the session: onboarding, credentials, OTP, profile setup and the
+/// worker / work giver mode switch.
 class AuthProvider extends ChangeNotifier {
   AuthProvider({required UserRepository repository, TokenStore? tokens})
     : _repository = repository,
@@ -29,7 +30,6 @@ class AuthProvider extends ChangeNotifier {
   String? _error;
   String? _pendingPhone;
   String _pendingArea = '';
-  UserRole? _pendingRole;
   bool _onboardingSeen = false;
   final Map<VerificationType, VerificationRecord> _verifications =
       <VerificationType, VerificationRecord>{};
@@ -40,7 +40,10 @@ class AuthProvider extends ChangeNotifier {
   String? get error => _error;
   bool get isAuthenticated => _user != null && _stage == AppStage.ready;
   bool get onboardingSeen => _onboardingSeen;
-  UserRole get role => _user?.role ?? _pendingRole ?? UserRole.worker;
+
+  /// The active mode. Every account is both a worker and a work giver; this
+  /// only decides which experience is shown.
+  UserRole get role => _user?.role ?? UserRole.worker;
 
   // ---------------------------------------------------------- verification
 
@@ -89,7 +92,8 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Asks the backend to review one kind of check.
+  /// Submits one kind of check. The backend approves it on submission, and the
+  /// result applies to the account in both modes.
   Future<bool> submitVerification(
     VerificationType type, {
     String documentName = '',
@@ -128,7 +132,6 @@ class AuthProvider extends ChangeNotifier {
     final UserProfile? session = await _repository.currentUser();
     _user = session;
     if (session != null) {
-      _pendingRole = session.role;
       _stage = AppStage.ready;
       unawaited(loadVerifications());
     } else {
@@ -174,11 +177,9 @@ class AuthProvider extends ChangeNotifier {
         identifier: identifier,
         password: password,
       );
-      // The account's role is decided by the backend and fixed at registration.
-      // The app must mirror it rather than overlay a locally chosen role, or the
-      // UI would show a role the account does not actually have.
+      // The backend remembers the last active mode, so the app mirrors it
+      // rather than overlaying a locally chosen one.
       _user = signedIn;
-      _pendingRole = signedIn.role;
       _stage = AppStage.ready;
       return true;
     });
@@ -189,12 +190,8 @@ class AuthProvider extends ChangeNotifier {
     required String phone,
     required String email,
     required String password,
-    required UserRole role,
   }) async {
     _pendingPhone = phone;
-    // The role is chosen once, at sign-up, and fixed on the account by the
-    // backend, so it is remembered here and echoed again at OTP verification.
-    _pendingRole = role;
     notifyListeners();
     return _guard(() async {
       await _repository.register(
@@ -202,7 +199,6 @@ class AuthProvider extends ChangeNotifier {
         phone: phone,
         email: email,
         password: password,
-        role: role,
         area: _pendingArea,
       );
       // Stage stays `auth` until the OTP is verified so the OTP route can be
@@ -216,10 +212,9 @@ class AuthProvider extends ChangeNotifier {
       _user = await _repository.verifyOtp(
         phone: _pendingPhone ?? _user?.phone ?? '',
         otp: otp,
-        role: _pendingRole ?? _user?.role ?? UserRole.worker,
       );
-      // The role was fixed at registration, so a brand new account goes straight
-      // to filling in its profile rather than picking a role again.
+      // A new account can both work and hire, so there is no role to pick: it
+      // goes straight to its profile and starts in worker mode.
       _stage = AppStage.profileSetup;
       return true;
     });
@@ -295,14 +290,13 @@ class AuthProvider extends ChangeNotifier {
 
   // ------------------------------------------------------------- role switch
 
-  /// Switches the live session between the worker and work giver experiences.
+  /// Moves the account between the worker and work giver experiences. The
+  /// backend stores the active mode and reissues the session for it.
   Future<bool> switchRole(UserRole next) async {
     if (_user == null || _user!.role == next) return false;
     return _guard(() async {
-      final UserRole granted = await _repository.switchRole(next);
-      _pendingRole = granted;
-      _user = _user!.copyWith(role: granted);
-      return granted == next;
+      _user = await _repository.switchRole(next);
+      return _user!.role == next;
     });
   }
 
@@ -325,7 +319,6 @@ class AuthProvider extends ChangeNotifier {
 
   void _dropSession() {
     _user = null;
-    _pendingRole = null;
     _verifications.clear();
     _stage = _onboardingSeen ? AppStage.auth : AppStage.onboarding;
     _error = null;

@@ -62,16 +62,6 @@ class StatusChip extends StatelessWidget {
     );
   }
 
-  /// Builds a chip for a dispute status.
-  factory StatusChip.dispute(DisputeStatus status, {bool dense = false}) {
-    return StatusChip(
-      label: status.label,
-      color: status.color,
-      icon: status.icon,
-      dense: dense,
-    );
-  }
-
   /// Neutral info chip (category, workplace type, etc).
   factory StatusChip.neutral(String label, {IconData? icon, Color? color}) {
     return StatusChip(

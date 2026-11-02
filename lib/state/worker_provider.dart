@@ -28,7 +28,6 @@ class WorkerProvider extends ChangeNotifier {
   List<WorkHistoryEntry> _history = <WorkHistoryEntry>[];
   int _totalEarned = 0;
   int _pendingAmount = 0;
-  int _disputedAmount = 0;
   String _workerId = 'u-worker-1';
 
   LoadState get state => _state;
@@ -41,7 +40,6 @@ class WorkerProvider extends ChangeNotifier {
   List<WorkHistoryEntry> get history => _history;
   int get totalEarned => _totalEarned;
   int get pendingAmount => _pendingAmount;
-  int get disputedAmount => _disputedAmount;
   String get workerId => _workerId;
 
   void setWorkerId(String id) {
@@ -90,7 +88,6 @@ class WorkerProvider extends ChangeNotifier {
     _earningList = await _earnings.allEarnings(_workerId);
     _totalEarned = await _earnings.totalEarned(_workerId);
     _pendingAmount = await _earnings.pendingAmount(_workerId);
-    _disputedAmount = await _earnings.disputedAmount(_workerId);
   }
 
   Future<void> _loadHistory() async {
@@ -114,14 +111,20 @@ class WorkerProvider extends ChangeNotifier {
   Future<JobApplication?> applicationForJob(String jobId) =>
       _applications.applicationFor(jobId, _workerId);
 
+  /// Why the last [apply] returned null, worded for the apply screen.
+  String? get applyError => _applyError;
+  String? _applyError;
+
   /// Applies to a job. Returns the created application, or null if the worker
-  /// already has a live application for it or the call failed.
+  /// already has a live application for it or the call failed; [applyError]
+  /// then says which.
   Future<JobApplication?> apply({
     required Job job,
     required String message,
     int? expectedPay,
     required String availability,
   }) async {
+    _applyError = null;
     try {
       // Guard here as well as in the UI so a repeated action cannot create a
       // second application for the same job.
@@ -129,7 +132,10 @@ class WorkerProvider extends ChangeNotifier {
         job.id,
         _workerId,
       );
-      if (existing != null) return null;
+      if (existing != null) {
+        _applyError = 'You have already applied for this job.';
+        return null;
+      }
 
       final JobApplication created = await _applications.apply(
         jobId: job.id,
@@ -141,7 +147,13 @@ class WorkerProvider extends ChangeNotifier {
       _myApplications = <JobApplication>[created, ..._myApplications];
       notifyListeners();
       return created;
+    } on ApiException catch (failure) {
+      _applyError = failure.errorCode == 'OwnJob'
+          ? 'You posted this job, so you cannot apply to it.'
+          : failure.message;
+      return null;
     } catch (_) {
+      _applyError = 'Could not send your application. Please try again.';
       return null;
     }
   }

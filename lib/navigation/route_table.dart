@@ -1,13 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../features/admin/screens/admin_dashboard_screen.dart';
-import '../features/admin/screens/admin_disputes_screen.dart';
-import '../features/admin/screens/admin_jobs_screen.dart';
-import '../features/admin/screens/admin_login_screen.dart';
-import '../features/admin/screens/admin_settings_screen.dart';
-import '../features/admin/screens/admin_shell_screen.dart';
-import '../features/admin/screens/admin_users_screen.dart';
-import '../features/admin/screens/admin_verifications_screen.dart';
 import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/onboarding_screen.dart';
@@ -162,24 +154,6 @@ abstract final class RouteTable {
         return const VerificationCentreScreen();
       case AppRoutes.workHistory:
         return const WorkHistoryScreen();
-
-      // Admin
-      case AppRoutes.adminLogin:
-        return const AdminLoginScreen();
-      case AppRoutes.adminShell:
-        return const AdminShellScreen();
-      case AppRoutes.adminDashboard:
-        return const AdminDashboardScreen();
-      case AppRoutes.adminUsers:
-        return const AdminUsersScreen();
-      case AppRoutes.adminJobs:
-        return const AdminJobsScreen();
-      case AppRoutes.adminDisputes:
-        return const AdminDisputesScreen();
-      case AppRoutes.adminVerifications:
-        return const AdminVerificationsScreen();
-      case AppRoutes.adminSettings:
-        return const AdminSettingsScreen();
 
       default:
         return null;

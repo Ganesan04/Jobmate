@@ -1,4 +1,3 @@
-import '../../models/admin.dart';
 import '../../models/application.dart';
 import '../../models/earning.dart';
 import '../../models/enums.dart';
@@ -267,58 +266,7 @@ abstract final class Mappers {
         targetId: json.strOrNull('targetId'),
       );
 
-  // ----------------------------------------------------------------- admin
-
-  static AdminUser adminUser(Map<String, dynamic> json) => AdminUser(
-    id: json.str('id'),
-    name: json.str('name'),
-    phone: json.str('phone'),
-    role: userRoleFromWire(json['role']),
-    verification: verificationStatusFromWire(json['verification']),
-    isActive: json.flag('isActive', true),
-    joinedOn: json.dateOr('joinedOn', DateTime.now()),
-    jobsCount: json.integer('jobsCount'),
-    area: json.str('area'),
-  );
-
-  static Dispute dispute(Map<String, dynamic> json) => Dispute(
-    id: json.str('id'),
-    reason: reportReasonFromWire(json['reason']),
-    raisedBy: json.str('raisedBy'),
-    againstUser: json.str('againstUser'),
-    jobTitle: json.str('jobTitle'),
-    company: json.str('company'),
-    raisedAt: json.dateOr('raisedAt', DateTime.now()),
-    status: disputeStatusFromWire(json['status']),
-    amount: json.integer('amount'),
-    details: json.str('details'),
-    notes: json.str('notes'),
-  );
-
-  static VerificationRequest verificationRequest(Map<String, dynamic> json) =>
-      VerificationRequest(
-        id: json.str('id'),
-        userId: json.str('userId'),
-        userName: json.str('userName'),
-        userRole: userRoleFromWire(json['userRole']),
-        type: verificationTypeFromWire(json['type']),
-        submittedAt: json.dateOr('submittedAt', DateTime.now()),
-        status: verificationStatusFromWire(json['status']),
-        document: json.str('document'),
-        note: json.str('note'),
-      );
-
-  static AdminStats adminStats(Map<String, dynamic> json) => AdminStats(
-    totalUsers: json.integer('totalUsers'),
-    workers: json.integer('workers'),
-    workGivers: json.integer('workGivers'),
-    activeJobs: json.integer('activeJobs'),
-    applications: json.integer('applications'),
-    completedJobs: json.integer('completedJobs'),
-    payments: json.integer('payments'),
-    verificationRequests: json.integer('verificationRequests'),
-    openDisputes: json.integer('openDisputes'),
-  );
+  // ---------------------------------------------------------------- ratings
 
   static WorkerRating workerRating(Map<String, dynamic> json) => WorkerRating(
     id: json.str('id'),

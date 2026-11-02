@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:jobmate/models/admin.dart';
 import 'package:jobmate/models/application.dart';
 import 'package:jobmate/models/earning.dart';
 import 'package:jobmate/models/enums.dart';
@@ -15,10 +14,6 @@ import 'package:jobmate/models/user.dart';
 abstract final class Fixtures {
   /// Every seeded account shares this password.
   static const String memberPassword = 'jobmate123';
-
-  /// The console is a separate sign-in from the member app.
-  static const String adminEmail = 'admin@jobmate.in';
-  static const String adminPassword = 'admin123';
 
   /// The account the tests act as when no session has been established.
   static const String defaultActorId = 'u-giver-1';
@@ -83,8 +78,6 @@ abstract final class Fixtures {
     area: 'Jayanagar',
   );
 
-  /// Members only. The console account is deliberately absent so that
-  /// `totalUsers == workers + workGivers` holds on the admin dashboard.
   static List<UserProfile> members() => <UserProfile>[
     ravi(),
     priya(),
@@ -93,77 +86,6 @@ abstract final class Fixtures {
     meera(),
     deepak(),
   ];
-
-  static List<AdminUser> adminUsers() {
-    final DateTime joined = DateTime(2026, 1, 12);
-    return <AdminUser>[
-      AdminUser(
-        id: ravi().id,
-        name: ravi().name,
-        phone: ravi().phone,
-        role: UserRole.worker,
-        verification: VerificationStatus.verified,
-        isActive: true,
-        joinedOn: joined,
-        jobsCount: 12,
-        area: ravi().area,
-      ),
-      AdminUser(
-        id: priya().id,
-        name: priya().name,
-        phone: priya().phone,
-        role: UserRole.worker,
-        verification: VerificationStatus.pending,
-        isActive: true,
-        joinedOn: joined.add(const Duration(days: 4)),
-        jobsCount: 3,
-        area: priya().area,
-      ),
-      AdminUser(
-        id: amit().id,
-        name: amit().name,
-        phone: amit().phone,
-        role: UserRole.worker,
-        verification: VerificationStatus.notVerified,
-        isActive: false,
-        joinedOn: joined.add(const Duration(days: 9)),
-        area: amit().area,
-      ),
-      AdminUser(
-        id: aarav().id,
-        name: aarav().name,
-        phone: aarav().phone,
-        role: UserRole.workGiver,
-        verification: VerificationStatus.verified,
-        isActive: true,
-        joinedOn: joined,
-        jobsCount: 8,
-        area: aarav().area,
-      ),
-      AdminUser(
-        id: meera().id,
-        name: meera().name,
-        phone: meera().phone,
-        role: UserRole.workGiver,
-        verification: VerificationStatus.notVerified,
-        isActive: true,
-        joinedOn: joined.add(const Duration(days: 6)),
-        jobsCount: 2,
-        area: meera().area,
-      ),
-      AdminUser(
-        id: deepak().id,
-        name: deepak().name,
-        phone: deepak().phone,
-        role: UserRole.workGiver,
-        verification: VerificationStatus.verified,
-        isActive: true,
-        joinedOn: joined.add(const Duration(days: 2)),
-        jobsCount: 5,
-        area: deepak().area,
-      ),
-    ];
-  }
 
   static WorkGiverProfile giverProfile(String id) => WorkGiverProfile(
     organisation: switch (id) {
@@ -587,84 +509,6 @@ abstract final class Fixtures {
     ];
   }
 
-  // ----------------------------------------------------------------- admin
-
-  static List<Dispute> disputes() {
-    final DateTime now = DateTime.now();
-    return <Dispute>[
-      Dispute(
-        id: 'd-1',
-        reason: ReportReason.notPaid,
-        raisedBy: 'Ravi Kumar',
-        againstUser: 'Aarav Malhotra',
-        jobTitle: 'Warehouse packing helper',
-        company: 'Bright Events',
-        raisedAt: now.subtract(const Duration(hours: 6)),
-        status: DisputeStatus.open,
-        amount: 800,
-        details: 'Released on 12 May but never received.',
-      ),
-      Dispute(
-        id: 'd-2',
-        reason: ReportReason.noShow,
-        raisedBy: 'Priya Nair',
-        againstUser: 'Meera Shah',
-        jobTitle: 'Weekend retail counter',
-        company: 'Meera Textiles',
-        raisedAt: now.subtract(const Duration(days: 2)),
-        status: DisputeStatus.underReview,
-        amount: 650,
-      ),
-      Dispute(
-        id: 'd-3',
-        reason: ReportReason.fakeJob,
-        raisedBy: 'Amit Verma',
-        againstUser: 'Deepak Rao',
-        jobTitle: 'Garden maintenance',
-        company: 'Rao Superstores',
-        raisedAt: now.subtract(const Duration(days: 9)),
-        status: DisputeStatus.resolved,
-        amount: 800,
-        notes: 'Listing removed.',
-      ),
-    ];
-  }
-
-  static List<VerificationRequest> verificationRequests() {
-    final DateTime now = DateTime.now();
-    return <VerificationRequest>[
-      VerificationRequest(
-        id: 'vr-1',
-        userId: 'u-worker-2',
-        userName: 'Priya Nair',
-        userRole: UserRole.worker,
-        type: VerificationType.identity,
-        submittedAt: now.subtract(const Duration(hours: 5)),
-        document: 'priya-aadhaar.pdf',
-      ),
-      VerificationRequest(
-        id: 'vr-2',
-        userId: 'u-giver-2',
-        userName: 'Meera Shah',
-        userRole: UserRole.workGiver,
-        type: VerificationType.address,
-        submittedAt: now.subtract(const Duration(days: 1)),
-        document: 'shop-lease.pdf',
-      ),
-      VerificationRequest(
-        id: 'vr-3',
-        userId: 'u-worker-1',
-        userName: 'Ravi Kumar',
-        userRole: UserRole.worker,
-        type: VerificationType.identity,
-        submittedAt: now.subtract(const Duration(days: 12)),
-        status: VerificationStatus.verified,
-        document: 'ravi-aadhaar.pdf',
-        note: 'Checked against the profile details.',
-      ),
-    ];
-  }
-
   /// Per-member verification rows, keyed by account then check type.
   static Map<String, Map<VerificationType, VerificationRecord>> verifications() {
     return <String, Map<VerificationType, VerificationRecord>>{
@@ -718,7 +562,7 @@ abstract final class Fixtures {
   static List<HelpCategory> helpCategories() => const <HelpCategory>[
     HelpCategory(
       title: 'Payments',
-      subtitle: 'Pay cycles, releases and disputes',
+      subtitle: 'Pay cycles and releases',
       icon: Icons.payments_rounded,
       color: Color(0xFF7C3AED),
     ),

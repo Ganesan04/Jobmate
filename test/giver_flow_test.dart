@@ -7,7 +7,6 @@ import 'package:jobmate/core/widgets/app_text_field.dart';
 import 'package:jobmate/features/giver/screens/create_job_screen.dart';
 import 'package:jobmate/features/giver/screens/giver_home_screen.dart';
 import 'package:jobmate/features/giver/screens/my_jobs_screen.dart';
-import 'package:jobmate/models/admin.dart';
 import 'package:jobmate/models/application.dart';
 import 'package:jobmate/models/earning.dart';
 import 'package:jobmate/models/enums.dart';
@@ -252,6 +251,30 @@ void main() {
       expect(published.company, 'Bright Events');
       expect(published.giverId, giver.giverId);
       expect(published.status, JobStatus.active);
+    });
+
+    test('an application made after sign-in shows up on refresh', () async {
+      final AppRepositories repos = buildFakeRepositories();
+      final GiverProvider giver = GiverProvider(
+        repository: repos.applications,
+        jobRepository: repos.jobs,
+        earningRepository: repos.earnings,
+      );
+      await giver.load();
+      final String jobId = giver.myJobs.first.id;
+      final int before = giver.applicantsForJob(jobId).length;
+
+      // Another account applies while the giver is already signed in.
+      await repos.applications.apply(
+        jobId: jobId,
+        workerId: 'u-new-applicant',
+        message: 'I can start tomorrow.',
+        availability: '1',
+      );
+      expect(giver.applicantsForJob(jobId).length, before);
+
+      await giver.refreshApplicants(jobId);
+      expect(giver.applicantsForJob(jobId).length, before + 1);
     });
 
     test('selecting, paying and rating a worker updates giver state', () async {

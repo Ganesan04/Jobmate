@@ -14,7 +14,7 @@ import '../../../core/widgets/status_chip.dart';
 import '../../../models/enums.dart';
 import '../../../state/auth_provider.dart';
 
-/// Profile setup after registration / role selection: photo, contact details,
+/// Profile setup after registration: photo, contact details,
 /// skills and location. Saves into the session and enters the app shell.
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key, this.isEdit = false});

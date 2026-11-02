@@ -15,7 +15,7 @@ import '../../../core/widgets/app_top_bar.dart';
 import '../../../core/widgets/info_row.dart';
 import '../../../core/widgets/profile_avatar.dart';
 import '../../../core/widgets/status_chip.dart';
-import '../../../models/admin.dart';
+import '../../../models/earning.dart';
 import '../../../models/enums.dart';
 import '../../../navigation/app_router.dart';
 import '../../../state/giver_provider.dart';

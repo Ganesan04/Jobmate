@@ -37,18 +37,18 @@ abstract final class HelpContent {
     ),
     HelpArticle(
       id: 'f-4',
-      question: 'How do I raise a dispute?',
+      question: 'How do I report a problem?',
       answer:
           'Open Help from your profile, choose Report a problem, pick the related job and describe the '
-          'issue. Our team reviews disputes within 48 hours.',
+          'issue. Our team reads every report within 48 hours.',
       category: 'Safety',
     ),
     HelpArticle(
       id: 'f-5',
       question: 'How do verifications work?',
       answer:
-          'Verified workers receive up to 3x more job invitations. Submit your Aadhaar for identity, '
-          'verify your phone by OTP, and add skill certificates to build trust.',
+          'Verify once and the badge shows whether you are working or hiring. Your phone is verified '
+          'by OTP; ID and skill documents are verified as soon as you submit them.',
       category: 'Account',
     ),
   ];
@@ -68,7 +68,7 @@ abstract final class HelpContent {
     ),
     HelpCategory(
       title: 'Report a problem',
-      subtitle: 'Raise a dispute or unsafe work report',
+      subtitle: 'Report an unsafe job or a payment issue',
       icon: Icons.report_gmailerrorred_rounded,
       color: AppColors.error,
     ),

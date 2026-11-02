@@ -147,15 +147,6 @@ VerificationType verificationTypeFromWire(Object? raw) => _fromWire(
 
 String wireVerificationType(VerificationType value) => value.name;
 
-DisputeStatus disputeStatusFromWire(Object? raw) => _fromWire(
-  DisputeStatus.values,
-  (DisputeStatus v) => v.name,
-  raw,
-  DisputeStatus.open,
-);
-
-String wireDisputeStatus(DisputeStatus value) => value.name;
-
 ReportReason reportReasonFromWire(Object? raw) => _fromWire(
   ReportReason.values,
   (ReportReason v) => v.name,

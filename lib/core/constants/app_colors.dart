@@ -36,11 +36,6 @@ abstract final class AppColors {
   static const Color errorSurface = Color(0xFFFDE3E3);
   static const Color info = Color(0xFF0EA5E9);
   static const Color infoSurface = Color(0xFFDDF0FC);
-
-  /// Admin visual identity (deep slate/indigo, intentionally distinct).
-  static const Color adminPrimary = Color(0xFF1E293B);
-  static const Color adminAccent = Color(0xFF4F46E5);
-  static const Color adminSurface = Color(0xFFEEF0FB);
 }
 
 /// Soft elevation shadows used by cards and sheets.

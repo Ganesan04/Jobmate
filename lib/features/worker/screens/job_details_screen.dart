@@ -16,6 +16,7 @@ import '../../../core/widgets/status_chip.dart';
 import '../../../models/enums.dart';
 import '../../../models/job.dart';
 import '../../../navigation/app_router.dart';
+import '../../../state/auth_provider.dart';
 import '../../../state/job_feed_provider.dart';
 import '../../../state/worker_provider.dart';
 
@@ -82,6 +83,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     final bool hasApplied = worker.applications.any(
       (dynamic application) => application.jobId == job.id,
     );
+    // One account both posts and applies, so its own postings show up in the
+    // feed too; the backend refuses those applications, so the app never offers one.
+    final bool isOwnJob = job.giverId == context.watch<AuthProvider>().user?.id;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -289,7 +293,12 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         ),
       ),
       bottomNavigationBar: StickyActionBar(
-        child: hasApplied
+        child: isOwnJob
+            ? const SecondaryButton(
+                label: 'You posted this job',
+                icon: Icons.business_center_rounded,
+              )
+            : hasApplied
             ? SecondaryButton(
                 label: 'You have applied',
                 icon: Icons.check_circle_rounded,

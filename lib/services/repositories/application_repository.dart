@@ -1,4 +1,3 @@
-import '../../models/admin.dart';
 import '../../models/application.dart';
 import '../../models/enums.dart';
 

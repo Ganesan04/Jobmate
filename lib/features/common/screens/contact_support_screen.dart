@@ -165,8 +165,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                       const SizedBox(height: AppSpacing.xs),
                       const InfoRow(
                         label: 'Payments',
-                        value:
-                            'Earnings screen shows every release and dispute',
+                        value: 'Earnings screen shows every payment release',
                         icon: Icons.payments_rounded,
                       ),
                       const InfoRow(

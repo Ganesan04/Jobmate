@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-/// The two consumer roles supported by Jobmate (admins are a separate console).
+/// The two modes of a Jobmate account. Every account is both; the active role
+/// only decides which experience is shown, and is switched from the profile.
 enum UserRole {
   worker('Worker', 'Find work and earn daily'),
-  workGiver('Work Giver', 'Hire reliable workers near you'),
-  admin('Admin', 'Platform administrator');
+  workGiver('Work Giver', 'Hire reliable workers near you');
 
   const UserRole(this.label, this.tagline);
 
@@ -12,10 +12,6 @@ enum UserRole {
   final String tagline;
 
   String get storageValue => name;
-
-  /// Roles a member can pick for themselves. `admin` is assigned by the backend
-  /// and is never offered on the role selection screen.
-  static const List<UserRole> selectable = <UserRole>[worker, workGiver];
 
   static UserRole fromStorage(String? value) => UserRole.values.firstWhere(
     (UserRole role) => role.name == value,
@@ -62,7 +58,7 @@ enum ApplicationStatus {
   bool get isOpen => !isTerminal;
 }
 
-/// Admin-side view of an application: same lifecycle, giver-driven wording.
+/// Giver-side view of an application: same lifecycle, giver-driven wording.
 enum ApplicantStatus {
   applied('Applied'),
   shortlisted('Shortlisted'),
@@ -80,7 +76,6 @@ enum PaymentStatus {
   pending('Pending', Icons.schedule_rounded, Color(0xFFF59E0B)),
   processing('Processing', Icons.autorenew_rounded, Color(0xFF0EA5E9)),
   paid('Paid', Icons.check_circle_rounded, Color(0xFF10B981)),
-  disputed('Disputed', Icons.gavel_rounded, Color(0xFFEF4444)),
   failed('Failed', Icons.error_outline_rounded, Color(0xFFEF4444)),
   refunded('Refunded', Icons.undo_rounded, Color(0xFF64748B)),
   cancelled('Cancelled', Icons.cancel_rounded, Color(0xFF94A3B8));
@@ -227,19 +222,6 @@ enum NotificationType {
   final Color color;
 }
 
-enum DisputeStatus {
-  open('Open', Icons.error_rounded, Color(0xFFEF4444)),
-  underReview('Under review', Icons.hourglass_top_rounded, Color(0xFFF59E0B)),
-  resolved('Resolved', Icons.task_alt_rounded, Color(0xFF10B981)),
-  rejected('Rejected', Icons.block_rounded, Color(0xFF64748B));
-
-  const DisputeStatus(this.label, this.icon, this.color);
-
-  final String label;
-  final IconData icon;
-  final Color color;
-}
-
 enum ReportReason {
   unsafeWorkplace('Unsafe workplace'),
   notPaid('Payment not received'),
@@ -251,17 +233,4 @@ enum ReportReason {
   const ReportReason(this.label);
 
   final String label;
-}
-
-enum AdminSection {
-  dashboard('Dashboard', Icons.dashboard_rounded),
-  users('Users', Icons.group_rounded),
-  jobs('Jobs', Icons.work_rounded),
-  disputes('Disputes', Icons.gavel_rounded),
-  verifications('Verifications', Icons.verified_user_rounded);
-
-  const AdminSection(this.label, this.icon);
-
-  final String label;
-  final IconData icon;
 }

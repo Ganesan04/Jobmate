@@ -1,4 +1,3 @@
-import 'package:jobmate/models/admin.dart';
 import 'package:jobmate/models/application.dart';
 import 'package:jobmate/models/earning.dart';
 import 'package:jobmate/models/enums.dart';
@@ -7,7 +6,7 @@ import 'package:jobmate/models/job_draft.dart';
 import 'package:jobmate/models/messaging.dart';
 import 'package:jobmate/models/support.dart';
 import 'package:jobmate/models/user.dart';
-import 'package:jobmate/services/repositories/admin_repository.dart';
+import 'package:jobmate/services/api/api_exception.dart';
 import 'package:jobmate/services/repositories/application_repository.dart';
 import 'package:jobmate/services/repositories/earning_repository.dart';
 import 'package:jobmate/services/repositories/help_repository.dart';
@@ -33,7 +32,6 @@ class FakeStore {
     : accounts = <String, UserProfile>{
         for (final UserProfile p in Fixtures.members()) p.id: p,
       },
-      adminUsers = Fixtures.adminUsers(),
       jobs = Fixtures.jobs(),
       applications = Fixtures.applications(),
       applicants = <String, JobApplicant>{
@@ -45,12 +43,9 @@ class FakeStore {
       conversations = Fixtures.conversations(),
       threads = Fixtures.threads(),
       notifications = Fixtures.notifications(),
-      disputes = Fixtures.disputes(),
-      verificationRequests = Fixtures.verificationRequests(),
       verifications = Fixtures.verifications();
 
   final Map<String, UserProfile> accounts;
-  final List<AdminUser> adminUsers;
   final List<Job> jobs;
   final List<JobApplication> applications;
   final Map<String, JobApplicant> applicants;
@@ -60,8 +55,6 @@ class FakeStore {
   final List<Conversation> conversations;
   final Map<String, List<Message>> threads;
   final List<AppNotification> notifications;
-  final List<Dispute> disputes;
-  final List<VerificationRequest> verificationRequests;
   final Map<String, Map<VerificationType, VerificationRecord>> verifications;
 
   final Set<String> _savedJobIds = <String>{};
@@ -132,7 +125,6 @@ AppRepositories buildFakeRepositories() {
     messaging: _FakeMessagingRepository(store),
     notifications: _FakeNotificationRepository(store),
     users: _FakeUserRepository(store),
-    admin: _FakeAdminRepository(store),
     help: _FakeHelpRepository(store),
   );
 }
@@ -334,6 +326,12 @@ class _FakeApplicationRepository implements ApplicationRepository {
     required String availability,
   }) async {
     final Job job = _store.jobById(jobId);
+    if (job.giverId == workerId) {
+      throw ApiException(
+        message: 'You cannot apply to your own job.',
+        errorCode: 'OwnJob',
+      );
+    }
     final JobApplication created = JobApplication(
       id: _store.nextId('a'),
       jobId: jobId,
@@ -646,12 +644,6 @@ class _FakeEarningRepository implements EarningRepository {
       .fold<int>(0, (int sum, Earning e) => sum + e.amount);
 
   @override
-  Future<int> disputedAmount(String workerId) async => _store
-      .earningsFor(workerId)
-      .where((Earning e) => e.status == PaymentStatus.disputed)
-      .fold<int>(0, (int sum, Earning e) => sum + e.amount);
-
-  @override
   Future<List<EarningSummary>> monthlySummary(String workerId) async {
     final Map<String, List<Earning>> grouped = <String, List<Earning>>{};
     for (final Earning e in _store.earningsFor(workerId)) {
@@ -929,30 +921,18 @@ class _FakeUserRepository implements UserRepository {
     required String phone,
     required String email,
     required String password,
-    required UserRole role,
     String area = '',
   }) async {
+    // Like the backend: every account can work and hire, and starts as a worker.
     final UserProfile created = UserProfile(
       id: _store.nextId('u'),
       name: name,
       phone: phone,
       email: email,
-      role: role,
+      role: UserRole.worker,
       area: area,
     );
     _store.accounts[created.id] = created;
-    _store.adminUsers.add(
-      AdminUser(
-        id: created.id,
-        name: name,
-        phone: phone,
-        role: role,
-        verification: VerificationStatus.notVerified,
-        isActive: true,
-        joinedOn: DateTime.now(),
-        area: area,
-      ),
-    );
     return created;
   }
 
@@ -960,14 +940,17 @@ class _FakeUserRepository implements UserRepository {
   Future<UserProfile> verifyOtp({
     required String phone,
     required String otp,
-    required UserRole role,
   }) async {
-    final UserProfile? existing = _store.accounts.values
-        .where((UserProfile p) => p.phone == phone)
-        .firstOrNull;
     final UserProfile verified =
-        existing?.copyWith(role: role) ??
-        UserProfile(id: _store.nextId('u'), name: '', phone: phone, role: role);
+        _store.accounts.values
+            .where((UserProfile p) => p.phone == phone)
+            .firstOrNull ??
+        UserProfile(
+          id: _store.nextId('u'),
+          name: '',
+          phone: phone,
+          role: UserRole.worker,
+        );
     _store.accounts[verified.id] = verified;
     _store._sessionUserId = verified.id;
     return verified;
@@ -1007,10 +990,14 @@ class _FakeUserRepository implements UserRepository {
   }
 
   @override
-  Future<UserRole> switchRole(UserRole role) async {
+  Future<UserProfile> switchRole(UserRole role) async {
+    // Stored on the account, so the mode survives a sign-out like it does on
+    // the backend.
     final String id = _store.actorId;
-    _store.accounts[id] = (_store.accounts[id] ?? Fixtures.ravi()).copyWith(role: role);
-    return role;
+    final UserProfile switched = (_store.accounts[id] ?? Fixtures.ravi())
+        .copyWith(role: role);
+    _store.accounts[id] = switched;
+    return switched;
   }
 
   @override
@@ -1052,9 +1039,10 @@ class _FakeUserRepository implements UserRepository {
     final String id = _store.actorId;
     final Map<VerificationType, VerificationRecord> rows = _store.verifications
         .putIfAbsent(id, () => <VerificationType, VerificationRecord>{});
+    // The backend approves a submission straight away; there is no reviewer.
     final VerificationRecord record = VerificationRecord(
       type: type,
-      status: VerificationStatus.pending,
+      status: VerificationStatus.verified,
       submittedOn: DateTime.now(),
       documentName: documentName,
     );
@@ -1078,195 +1066,6 @@ class _FakeUserRepository implements UserRepository {
 
   @override
   Future<HelpPreference> helpPreference() async => const HelpPreference();
-}
-
-// ==================================================================== admin
-
-class _FakeAdminRepository implements AdminRepository {
-  _FakeAdminRepository(this._store);
-
-  final FakeStore _store;
-
-  @override
-  Future<bool> signIn({required String email, required String password}) async {
-    if (email.trim().toLowerCase() != Fixtures.adminEmail ||
-        password != Fixtures.adminPassword) {
-      throw const AdminFailure('Those console credentials are not correct.');
-    }
-    return true;
-  }
-
-  @override
-  Future<void> signOut() async {}
-
-  /// Computed from the seeded rows so the dashboard stays self-consistent:
-  /// `totalUsers` is members only, which is why it equals workers + givers.
-  @override
-  Future<AdminStats> stats() async {
-    final List<AdminUser> members = _store.adminUsers;
-    return AdminStats(
-      totalUsers: members.length,
-      workers: members
-          .where((AdminUser u) => u.role == UserRole.worker)
-          .length,
-      workGivers: members
-          .where((AdminUser u) => u.role == UserRole.workGiver)
-          .length,
-      activeJobs: _store.jobs
-          .where((Job j) => j.status == JobStatus.active)
-          .length,
-      applications: _store.applications.length,
-      completedJobs: _store.jobs
-          .where((Job j) => j.status == JobStatus.completed)
-          .length,
-      payments: _store.earnings
-          .where((Earning e) => e.status == PaymentStatus.paid)
-          .length,
-      verificationRequests: _store.verificationRequests
-          .where(
-            (VerificationRequest v) =>
-                v.status == VerificationStatus.pending,
-          )
-          .length,
-      openDisputes: _store.disputes
-          .where(
-            (Dispute d) =>
-                d.status == DisputeStatus.open ||
-                d.status == DisputeStatus.underReview,
-          )
-          .length,
-    );
-  }
-
-  @override
-  Future<List<AdminUser>> users({
-    String query = '',
-    UserRole? role,
-    VerificationStatus? verification,
-  }) async {
-    final String needle = query.trim().toLowerCase();
-    return _store.adminUsers.where((AdminUser user) {
-      if (needle.isNotEmpty) {
-        final bool matches =
-            user.name.toLowerCase().contains(needle) ||
-            user.phone.contains(needle) ||
-            user.id.toLowerCase().contains(needle);
-        if (!matches) return false;
-      }
-      if (role != null && user.role != role) return false;
-      if (verification != null && user.verification != verification) {
-        return false;
-      }
-      return true;
-    }).toList();
-  }
-
-  @override
-  Future<void> setUserActive(
-    String userId,
-    bool isActive, {
-    String reason = '',
-  }) async {
-    final int index = _store.adminUsers.indexWhere(
-      (AdminUser user) => user.id == userId,
-    );
-    if (index == -1) return;
-    final AdminUser user = _store.adminUsers[index];
-    _store.adminUsers[index] = AdminUser(
-      id: user.id,
-      name: user.name,
-      phone: user.phone,
-      role: user.role,
-      verification: user.verification,
-      isActive: isActive,
-      joinedOn: user.joinedOn,
-      jobsCount: user.jobsCount,
-      area: user.area,
-    );
-  }
-
-  @override
-  Future<List<Job>> jobs({
-    String query = '',
-    JobStatus? status,
-    JobCategory? category,
-  }) async {
-    final String needle = query.trim().toLowerCase();
-    return _store.jobs.where((Job job) {
-      if (needle.isNotEmpty &&
-          !job.title.toLowerCase().contains(needle) &&
-          !job.company.toLowerCase().contains(needle)) {
-        return false;
-      }
-      if (status != null && job.status != status) return false;
-      if (category != null && job.category != category) return false;
-      return true;
-    }).toList();
-  }
-
-  @override
-  Future<void> remindApplicants(String jobId) async {}
-
-  @override
-  Future<List<Dispute>> disputes({DisputeStatus? status}) async =>
-      _store.disputes
-          .where((Dispute d) => status == null || d.status == status)
-          .toList();
-
-  @override
-  Future<Dispute> reviewDispute(String disputeId) async {
-    final Dispute dispute = _findDispute(disputeId);
-    return _replaceDispute(
-      dispute.copyWith(status: DisputeStatus.underReview),
-    );
-  }
-
-  @override
-  Future<Dispute> resolveDispute(
-    String disputeId,
-    DisputeStatus status, {
-    String notes = '',
-  }) async => _replaceDispute(
-    _findDispute(disputeId).copyWith(status: status, notes: notes),
-  );
-
-  Dispute _findDispute(String id) => _store.disputes.firstWhere(
-    (Dispute d) => d.id == id,
-    orElse: () => throw StateError('No dispute with id $id'),
-  );
-
-  Dispute _replaceDispute(Dispute updated) {
-    final int index = _store.disputes.indexWhere(
-      (Dispute d) => d.id == updated.id,
-    );
-    _store.disputes[index] = updated;
-    return updated;
-  }
-
-  @override
-  Future<List<VerificationRequest>> verificationRequests({
-    VerificationStatus? status,
-  }) async => _store.verificationRequests
-      .where(
-        (VerificationRequest v) => status == null || v.status == status,
-      )
-      .toList();
-
-  @override
-  Future<VerificationRequest> reviewVerification(
-    String requestId,
-    VerificationStatus decision, {
-    String note = '',
-  }) async {
-    final int index = _store.verificationRequests.indexWhere(
-      (VerificationRequest v) => v.id == requestId,
-    );
-    if (index == -1) throw StateError('No verification request $requestId');
-    final VerificationRequest updated = _store.verificationRequests[index]
-        .copyWith(status: decision, note: note);
-    _store.verificationRequests[index] = updated;
-    return updated;
-  }
 }
 
 // ===================================================================== help

@@ -92,7 +92,7 @@ class _OtpScreenState extends State<OtpScreen> {
       setState(() => _localError = auth.error ?? 'Incorrect OTP');
       return;
     }
-    // The role was fixed at registration, so the stage now points straight at
+    // There is no role to pick, so the stage now points straight at
     // profile setup. Drop the pushed register/OTP routes and let the
     // stage-driven RootGate show the next screen.
     Navigator.of(context).popUntil((Route<dynamic> route) => route.isFirst);

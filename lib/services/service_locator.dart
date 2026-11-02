@@ -1,7 +1,5 @@
 import 'api/api_client.dart';
 import 'api/token_store.dart';
-import 'repositories/admin_repository.dart';
-import 'repositories/api/api_admin_repository.dart';
 import 'repositories/api/api_application_repository.dart';
 import 'repositories/api/api_earning_repository.dart';
 import 'repositories/api/api_help_repository.dart';
@@ -30,7 +28,6 @@ class AppRepositories {
     required this.messaging,
     required this.notifications,
     required this.users,
-    required this.admin,
     required this.help,
     this.tokens,
   });
@@ -47,7 +44,6 @@ class AppRepositories {
     required MessagingRepository messaging,
     required NotificationRepository notifications,
     required UserRepository users,
-    required AdminRepository admin,
     required HelpRepository help,
     ApiClient? client,
     TokenStore? tokens,
@@ -60,7 +56,6 @@ class AppRepositories {
     messaging: messaging,
     notifications: notifications,
     users: users,
-    admin: admin,
     help: help,
   );
 
@@ -86,7 +81,6 @@ class AppRepositories {
       messaging: ApiMessagingRepository(apiClient),
       notifications: ApiNotificationRepository(apiClient),
       users: ApiUserRepository(apiClient),
-      admin: ApiAdminRepository(apiClient),
       help: ApiHelpRepository(apiClient),
     );
   }
@@ -103,7 +97,6 @@ class AppRepositories {
   final MessagingRepository messaging;
   final NotificationRepository notifications;
   final UserRepository users;
-  final AdminRepository admin;
   final HelpRepository help;
 
   void dispose() => client?.close();

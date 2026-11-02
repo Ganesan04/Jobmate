@@ -14,23 +14,18 @@ abstract class UserRepository {
     required String password,
   });
 
-  /// Creates an unverified account and triggers the OTP. [role] is the role
-  /// the user picked before signing up.
+  /// Creates an unverified account and triggers the OTP. Every account can
+  /// work and hire; it starts in worker mode.
   Future<UserProfile?> register({
     required String name,
     required String phone,
     required String email,
     required String password,
-    required UserRole role,
     String area,
   });
 
   /// Confirms the OTP and completes registration, returning the new user.
-  Future<UserProfile> verifyOtp({
-    required String phone,
-    required String otp,
-    required UserRole role,
-  });
+  Future<UserProfile> verifyOtp({required String phone, required String otp});
 
   /// Issues a fresh OTP, superseding any outstanding one.
   Future<void> resendOtp({required String phone});
@@ -54,9 +49,10 @@ abstract class UserRepository {
     required List<String> skills,
   });
 
-  /// The role a member can hold is decided by the backend, so switching is
-  /// requested rather than asserted.
-  Future<UserRole> switchRole(UserRole role);
+  /// Moves the account into worker or work giver mode. The backend stores the
+  /// active role and issues a new session for it, so the switch survives a
+  /// sign-out. Returns the user in the new mode.
+  Future<UserProfile> switchRole(UserRole role);
 
   Future<void> signOut();
 
@@ -66,7 +62,8 @@ abstract class UserRepository {
 
   Future<List<VerificationRecord>> verificationRecords();
 
-  /// Requests a check to be reviewed. Returns the record in a pending state.
+  /// Submits a check. The backend approves it immediately and returns the
+  /// approved record.
   Future<VerificationRecord> startVerification(
     VerificationType type, {
     String documentName,
